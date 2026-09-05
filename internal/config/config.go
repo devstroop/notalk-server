@@ -34,7 +34,33 @@ type ServerConfig struct {
 
 type AuthConfig struct {
 	SecretKey           string `toml:"secret_key"`
+	JWTSecret           string `toml:"jwt_secret"`
+	AdminSecret         string `toml:"admin_secret"`
 	RegistrationEnabled bool   `toml:"registration_enabled"`
+}
+
+// EffectiveJWTSecret returns the JWT HMAC secret, preferring WALINK_JWT_SECRET
+// with fallback to WALINK_AUTH_SECRET_KEY for compat.
+func (a AuthConfig) EffectiveJWTSecret() string {
+	if a.JWTSecret != "" {
+		return a.JWTSecret
+	}
+	return a.SecretKey
+}
+
+// EffectiveAdminSecret returns the static admin bearer secret, preferring
+// WALINK_ADMIN_SECRET with fallback to WALINK_AUTH_SECRET_KEY.
+func (a AuthConfig) EffectiveAdminSecret() string {
+	if a.AdminSecret != "" {
+		return a.AdminSecret
+	}
+	return a.SecretKey
+}
+
+// UsesLegacySecret reports whether WALINK_AUTH_SECRET_KEY fallback is in use
+// for either JWT or admin auth (caller should log a startup warning).
+func (a AuthConfig) UsesLegacySecret() bool {
+	return (a.JWTSecret == "" && a.SecretKey != "") || (a.AdminSecret == "" && a.SecretKey != "")
 }
 
 type SMTPConfig struct {
@@ -145,8 +171,21 @@ func applyEnvOverrides(cfg *Config) {
 			cfg.Server.Port = n
 		}
 	}
+	if v := os.Getenv("WALINK_JWT_SECRET"); v != "" {
+		cfg.Auth.JWTSecret = v
+	}
+	if v := os.Getenv("WALINK_ADMIN_SECRET"); v != "" {
+		cfg.Auth.AdminSecret = v
+	}
 	if v := os.Getenv("WALINK_AUTH_SECRET_KEY"); v != "" {
 		cfg.Auth.SecretKey = v
+		// Backfill split secrets for compat if explicit split not set
+		if cfg.Auth.JWTSecret == "" {
+			cfg.Auth.JWTSecret = v
+		}
+		if cfg.Auth.AdminSecret == "" {
+			cfg.Auth.AdminSecret = v
+		}
 	}
 	if v := os.Getenv("WALINK_LOG_LEVEL"); v != "" {
 		cfg.Logging.Level = v
