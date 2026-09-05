@@ -38,7 +38,6 @@ func TestEnvOverridesFull(t *testing.T) {
 	t.Setenv("NOTALK_SMTP_STARTTLS", "true")
 	t.Setenv("NOTALK_SWAGGER_ENABLED", "false")
 	t.Setenv("NOTALK_SWAGGER_PATH", "/docs")
-	t.Setenv("NOTALK_WEB_ENABLED", "false")
 	t.Setenv("NOTALK_MCP_ENABLED", "false")
 	t.Setenv("NOTALK_BILLING_ENABLED", "true")
 	t.Setenv("NOTALK_BILLING_STRIPE_SECRET_KEY", "sk_test")
@@ -125,9 +124,6 @@ func TestEnvOverridesFull(t *testing.T) {
 	}
 	if cfg.Swagger.Path != "/docs" {
 		t.Error("swagger path")
-	}
-	if cfg.Web.Enabled {
-		t.Error("web should be false")
 	}
 	if cfg.MCP.Enabled {
 		t.Error("mcp should be false")
@@ -242,9 +238,6 @@ func TestDefaultsAllFields(t *testing.T) {
 	}
 	if !cfg.MCP.Enabled {
 		t.Error("mcp default")
-	}
-	if !cfg.Web.Enabled {
-		t.Error("web default")
 	}
 }
 

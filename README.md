@@ -1,6 +1,6 @@
 # NoTalk
 
-**WhatsApp HTTP API + MCP server.** Multi-account WhatsApp over the native multi-device protocol — REST API, MCP for AI agents, and a web dashboard in a single Go binary. No browser, no Selenium.
+**WhatsApp HTTP API + MCP server.** Multi-account WhatsApp over the native multi-device protocol — REST API and MCP for AI agents in a single Go binary. No browser, no Selenium. Web dashboard is now a separate project [`notalk-web`](../notalk-web).
 
 > `Go 1.26` · `PostgreSQL 18` · `whatsmeow @ main` · 26 MCP tools · Swagger at `/api-docs`
 
@@ -9,7 +9,6 @@
 - **Multi-account** — dozens of numbers on one server, isolated sessions
 - **Phone-first** — `?phone=9198…` auto-resolves to JID (`@s.whatsapp.net` / `@g.us` / LID)
 - **MCP** — 26 tools (`send_message`, `list_chats`, `create_group`, …) via Streamable HTTP at fixed `/mcp`
-- **Web dashboard** — HTMX UI for accounts, chats, admin (users/roles/keys/billing)
 - **Auth + RBAC** — secret key → JWT → API key (`notalk_…`), `resource:action` permissions (`*` for admin)
 - **Browserless** — Noise + Signal + Protobuf over encrypted WebSocket (`whatsmeow`)
 - **Pure Go** — single binary, `CGO_ENABLED=0`, no runtime deps
@@ -44,7 +43,6 @@ docker compose logs -f
 
 | URL | Description |
 |-----|-------------|
-| `/` | Web dashboard |
 | `/api-docs` | Swagger UI |
 | `/mcp` | MCP endpoint (fixed, Bearer auth) |
 | `/api/health` | Health check (no auth) |
@@ -271,7 +269,6 @@ curl -X POST http://localhost:3000/api/v1/api-keys -H "$AUTH" -H "Content-Type: 
 | `accounts.defaults` | `idle_timeout` | `300` | Auto-disconnect (0 = never) |
 | `webhooks` | `enabled` / `timeout_ms` / `retry_count` / `retry_delay_ms` | `false` / `5000` / `3` / `1000` | Webhook |
 | `swagger` | `enabled` / `path` | `true` / `/api-docs` | Swagger UI |
-| `web` | `enabled` | `true` | Web dashboard |
 | `mcp` | `enabled` | `true` | MCP at fixed `/mcp` (toggle via `PATCH /api/v1/mcp`) |
 | `billing` | `enabled` / `stripe_secret_key` / `stripe_webhook_secret` / `default_plan` | `false` / — / — / `free` | Stripe billing |
 | `llm` | `enabled` / `provider` / `api_key` / `base_url` / `model` | `false` / `openai` / — | Copilot/Autopilot |
@@ -282,7 +279,7 @@ See `CONFIGURATION.md` for full TOML + env table. Docker compose maps these to `
 
 ## Architecture
 
-See `docs/architecture.md` — Mermaid overview, project layout (`cmd/notalk/main.go`, `internal/{config,database,handler,mcpserver,middleware,service,web}`), request flows (HTTP + MCP `sequenceDiagram`), data layout (PostgreSQL `account`, `app_user`, `api_key`, `setting`, `plans` + `~/.notalk/accounts/{uuid}/`), and Noise/Signal/Protobuf protocol.
+See `docs/architecture.md` — Mermaid overview, project layout (`cmd/notalk/main.go`, `internal/{config,database,handler,mcpserver,middleware,service}`), request flows (HTTP + MCP `sequenceDiagram`), data layout (PostgreSQL `account`, `app_user`, `api_key`, `setting`, `plans` + `~/.notalk/accounts/{uuid}/`), and Noise/Signal/Protobuf protocol. Web dashboard lives in the separate `notalk-web` project.
 
 ## Development
 

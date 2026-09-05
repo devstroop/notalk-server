@@ -16,7 +16,6 @@ import (
 	"github.com/devstroop/notalk/internal/middleware"
 	"github.com/devstroop/notalk/internal/service"
 	smtpclient "github.com/devstroop/notalk/internal/smtp"
-	"github.com/devstroop/notalk/internal/web"
 	"github.com/lib/pq"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -150,15 +149,6 @@ func main() {
 		mux.Handle(swaggerPath+"/", handler.SwaggerUI(swaggerPath))
 		mux.Handle(swaggerPath, handler.SwaggerUI(swaggerPath))
 		log.Info().Str("path", swaggerPath).Msg("swagger UI enabled")
-	}
-
-	// Web UI (embedded HTMX dashboard)
-	if cfg.Web.Enabled {
-		webUI := web.New(mgr, db, cfg.Auth.SecretKey, version, cfg.Auth.RegistrationEnabled, mailer, cfg.LLM)
-		webUI.RegisterRoutes(mux)
-		// Wire autopilot auto-reply hook.
-		webUI.InitAutoReply()
-		log.Info().Msg("web UI enabled at /")
 	}
 
 	// Wrap everything with CORS

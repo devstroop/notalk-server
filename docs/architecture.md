@@ -2,13 +2,13 @@
 
 ## Overview
 
-NoTalk is an HTTP API server and MCP server implementing WhatsApp's multi-device protocol. It provides a REST API, an MCP endpoint for AI agents, and an embedded web dashboard — all from a single Go binary. No browser or headless Chrome needed.
+NoTalk is an HTTP API server and MCP server implementing WhatsApp's multi-device protocol. It provides a REST API and an MCP endpoint for AI agents — all from a single Go binary. No browser or headless Chrome needed. The web dashboard is a separate project (`notalk-web`).
 
 ```mermaid
 flowchart TB
     Client["Client<br/>(any lang)"] <-->|HTTP/JSON| Server
     Agent["AI Agent<br/>(Claude, etc)"] <-->|MCP/SSE<br/>/mcp| Server
-    Browser["Browser<br/>(Web UI)"] <-->|HTMX/HTML| Server
+    Web["Web Dashboard<br/>(notalk-web)"] <-->|HTTP/JSON| Server
 
     subgraph Server["NoTalk Server"]
         Handlers["Handlers<br/>(REST)"] --- Middleware["Middleware<br/>(Auth, RBAC, CORS, Billing)"]
@@ -59,20 +59,9 @@ notalk/
     │   ├── account.go              WhatsApp-backed account lifecycle
     │   ├── manager.go              Multi-account orchestration
     │   └── proxy.go                SOCKS5/HTTP proxy support
-    ├── smtp/smtp.go                Email delivery for password resets
-    └── web/
-        ├── routes.go               Web dashboard route registration
-        ├── accounts.go             Account UI handlers
-        ├── admin.go                User/role admin pages
-        ├── auth.go                 Login/register/forgot-password pages
-        ├── middleware.go           Web session auth
-        ├── render.go               Template rendering
-        ├── static/                 CSS, JS assets
-        └── templates/              HTML templates (HTMX)
-            └── pages/
-                ├── messaging.html  Full messaging UI (chats, send, media, bulk)
-                ├── pricing.html    Billing plans page
-                └── ...
+    └── smtp/smtp.go                Email delivery for password resets
+
+> Web dashboard (`notalk-web`) lives in a separate repository/project and talks to this server via the REST API.
 ```
 
 ## Key Components
