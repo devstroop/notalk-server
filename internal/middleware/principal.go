@@ -137,3 +137,6 @@ func withPrincipal(ctx context.Context, p *Principal) context.Context {
 	}
 	return ctx
 }
+
+// Ensure withPrincipal is considered used for lint (P0 migration, wired in next PR).
+var _ = withPrincipal

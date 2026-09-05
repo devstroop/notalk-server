@@ -260,23 +260,17 @@ type CompositeAuthenticator []Authenticator
 // - not recognized → try next
 // - none recognized → ErrNoCredentials
 func (c CompositeAuthenticator) Authenticate(r *http.Request) (*Principal, bool, error) {
-	var sawRecognizedInvalid bool
 	for _, a := range c {
 		p, recognized, err := a.Authenticate(r)
 		if !recognized {
 			continue
 		}
 		if err != nil {
-			sawRecognizedInvalid = true
 			return nil, true, ErrInvalidCredentials
 		}
 		if p != nil {
 			return p, true, nil
 		}
-		sawRecognizedInvalid = true
-		return nil, true, ErrInvalidCredentials
-	}
-	if sawRecognizedInvalid {
 		return nil, true, ErrInvalidCredentials
 	}
 	return nil, false, ErrNoCredentials
