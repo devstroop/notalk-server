@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/devstroop/walink/internal/database"
-	"github.com/devstroop/walink/internal/model"
+	"github.com/devstroop/notalk/internal/database"
+	"github.com/devstroop/notalk/internal/model"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
@@ -20,7 +20,7 @@ import (
 // LoginPage renders the login form.
 func (h *Handler) LoginPage(w http.ResponseWriter, r *http.Request) {
 	data := PageData{
-		Title: "Sign in — WaLink",
+		Title: "Sign in — NoTalk",
 		Page:  "login",
 		Flash: getFlash(w, r),
 		Data: map[string]any{
@@ -74,7 +74,7 @@ func (h *Handler) LoginSubmit(w http.ResponseWriter, r *http.Request) {
 		Subject:   user.ID,
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		Issuer:    "walink",
+		Issuer:    "notalk",
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signed, err := token.SignedString([]byte(h.secret))
@@ -97,7 +97,7 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 // RegisterPage renders the registration form.
 func (h *Handler) RegisterPage(w http.ResponseWriter, r *http.Request) {
 	data := PageData{
-		Title: "Register — WaLink",
+		Title: "Register — NoTalk",
 		Page:  "register",
 		Flash: getFlash(w, r),
 	}
@@ -162,7 +162,7 @@ func (h *Handler) Root(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	data := PageData{
-		Title:   "WaLink — WhatsApp API Gateway",
+		Title:   "NoTalk — WhatsApp API Gateway",
 		Page:    "home",
 		Version: h.version,
 		Data: map[string]any{
@@ -174,7 +174,7 @@ func (h *Handler) Root(w http.ResponseWriter, r *http.Request) {
 
 // AboutPage renders the public about page.
 func (h *Handler) AboutPage(w http.ResponseWriter, r *http.Request) {
-	data := PageData{Title: "About — WaLink", Page: "about", Version: h.version,
+	data := PageData{Title: "About — NoTalk", Page: "about", Version: h.version,
 		Data: map[string]any{"RegistrationEnabled": h.regEnabled}}
 	h.render.Page(w, http.StatusOK, "about", data)
 }
@@ -195,7 +195,7 @@ func (h *Handler) PricingPage(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	data := PageData{
-		Title:   "Pricing — WaLink",
+		Title:   "Pricing — NoTalk",
 		Page:    "pricing",
 		Version: h.version,
 		Data: map[string]any{
@@ -208,14 +208,14 @@ func (h *Handler) PricingPage(w http.ResponseWriter, r *http.Request) {
 
 // TermsPage renders the public terms of service page.
 func (h *Handler) TermsPage(w http.ResponseWriter, r *http.Request) {
-	data := PageData{Title: "Terms of Service — WaLink", Page: "terms", Version: h.version,
+	data := PageData{Title: "Terms of Service — NoTalk", Page: "terms", Version: h.version,
 		Data: map[string]any{"RegistrationEnabled": h.regEnabled}}
 	h.render.Page(w, http.StatusOK, "terms", data)
 }
 
 // PrivacyPage renders the public privacy policy page.
 func (h *Handler) PrivacyPage(w http.ResponseWriter, r *http.Request) {
-	data := PageData{Title: "Privacy Policy — WaLink", Page: "privacy", Version: h.version,
+	data := PageData{Title: "Privacy Policy — NoTalk", Page: "privacy", Version: h.version,
 		Data: map[string]any{"RegistrationEnabled": h.regEnabled}}
 	h.render.Page(w, http.StatusOK, "privacy", data)
 }
@@ -223,7 +223,7 @@ func (h *Handler) PrivacyPage(w http.ResponseWriter, r *http.Request) {
 // ForgotPasswordPage renders the forgot-password form.
 func (h *Handler) ForgotPasswordPage(w http.ResponseWriter, r *http.Request) {
 	data := PageData{
-		Title: "Forgot Password — WaLink",
+		Title: "Forgot Password — NoTalk",
 		Page:  "forgot-password",
 		Flash: getFlash(w, r),
 	}
@@ -279,11 +279,11 @@ func (h *Handler) ForgotPasswordSubmit(w http.ResponseWriter, r *http.Request) {
 	resetLink := scheme + "://" + r.Host + "/reset-password?token=" + plainToken
 
 	if h.smtp != nil && h.smtp.Enabled() {
-		body := "You requested a password reset for your WaLink account.\n\n" +
+		body := "You requested a password reset for your NoTalk account.\n\n" +
 			"Use this link to reset your password (valid for 1 hour):\n" +
 			resetLink + "\n\n" +
 			"If you did not request this, ignore this email."
-		if err := h.smtp.Send(email, "WaLink Password Reset", body); err != nil {
+		if err := h.smtp.Send(email, "NoTalk Password Reset", body); err != nil {
 			log.Error().Err(err).Msg("failed to send reset email")
 		}
 	} else {
@@ -327,7 +327,7 @@ func (h *Handler) ResetPasswordPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := PageData{
-		Title: "Reset Password — WaLink",
+		Title: "Reset Password — NoTalk",
 		Page:  "reset-password",
 		Flash: getFlash(w, r),
 		Data: map[string]any{

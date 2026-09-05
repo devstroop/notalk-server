@@ -9,12 +9,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/devstroop/walink/internal/database"
-	"github.com/devstroop/walink/internal/middleware"
+	"github.com/devstroop/notalk/internal/database"
+	"github.com/devstroop/notalk/internal/middleware"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-const sessionCookie = "walink_session"
+const sessionCookie = "notalk_session"
 
 // WebAuth is cookie-based auth middleware for the web UI.
 // It reads the JWT from an httpOnly cookie instead of the Authorization header.
@@ -95,8 +95,8 @@ func WebAuth(secret string, db *database.DB, regEnabled bool, next http.Handler)
 			return
 		}
 
-		// Path 3: API key (walink_ prefix)
-		if strings.HasPrefix(token, "walink_") {
+		// Path 3: API key (notalk_ prefix)
+		if strings.HasPrefix(token, "notalk_") {
 			hash := sha256.Sum256([]byte(token))
 			keyHash := hex.EncodeToString(hash[:])
 			rec, err := db.GetAPIKeyByHash(keyHash)
@@ -172,7 +172,7 @@ func clearSession(w http.ResponseWriter) {
 // setFlash stores a flash message in a cookie for the next page load.
 func setFlash(w http.ResponseWriter, typ, message string) {
 	http.SetCookie(w, &http.Cookie{
-		Name:     "walink_flash",
+		Name:     "notalk_flash",
 		Value:    typ + "|" + message,
 		Path:     "/",
 		HttpOnly: true,
@@ -183,13 +183,13 @@ func setFlash(w http.ResponseWriter, typ, message string) {
 
 // getFlash reads and clears the flash cookie.
 func getFlash(w http.ResponseWriter, r *http.Request) *Flash {
-	c, err := r.Cookie("walink_flash")
+	c, err := r.Cookie("notalk_flash")
 	if err != nil || c.Value == "" {
 		return nil
 	}
 	// Clear immediately
 	http.SetCookie(w, &http.Cookie{
-		Name:   "walink_flash",
+		Name:   "notalk_flash",
 		Value:  "",
 		Path:   "/",
 		MaxAge: -1,

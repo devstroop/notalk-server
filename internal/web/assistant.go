@@ -10,8 +10,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 
-	"github.com/devstroop/walink/internal/agent"
-	"github.com/devstroop/walink/internal/database"
+	"github.com/devstroop/notalk/internal/agent"
+	"github.com/devstroop/notalk/internal/database"
 )
 
 // ── Mode 1: Personal Assistant ────────────────────────────────────────────────

@@ -3,8 +3,8 @@ package handler
 import (
 	"net/http"
 
-	"github.com/devstroop/walink/internal/middleware"
-	"github.com/devstroop/walink/internal/model"
+	"github.com/devstroop/notalk/internal/middleware"
+	"github.com/devstroop/notalk/internal/model"
 )
 
 // ListAccounts — GET /api/v1/accounts

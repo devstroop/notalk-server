@@ -12,14 +12,14 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	qrcode "github.com/skip2/go-qrcode"
 
-	"github.com/devstroop/walink/internal/database"
-	"github.com/devstroop/walink/internal/middleware"
-	"github.com/devstroop/walink/internal/model"
-	"github.com/devstroop/walink/internal/service"
+	"github.com/devstroop/notalk/internal/database"
+	"github.com/devstroop/notalk/internal/middleware"
+	"github.com/devstroop/notalk/internal/model"
+	"github.com/devstroop/notalk/internal/service"
 )
 
 // New creates an MCP server backed by the given AccountManager.
-// It exposes walink's core capabilities as MCP tools.
+// It exposes notalk's core capabilities as MCP tools.
 //
 // Auth + account scoping is handled by middleware before requests reach here.
 // Tool handlers read the caller's Identity and optional scoped account_id from context.
@@ -28,7 +28,7 @@ import (
 // Standard users are pre-scoped to a single account_id (set by MCPScope middleware).
 func New(mgr *service.AccountManager, db *database.DB, version string) *server.MCPServer {
 	s := server.NewMCPServer(
-		"WaLink",
+		"NoTalk",
 		version,
 		server.WithToolCapabilities(false),
 		server.WithRecovery(),

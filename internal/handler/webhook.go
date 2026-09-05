@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/devstroop/walink/internal/database"
-	"github.com/devstroop/walink/internal/model"
+	"github.com/devstroop/notalk/internal/database"
+	"github.com/devstroop/notalk/internal/model"
 )
 
 // GetWebhook — GET /api/v1/accounts/{account_id}/webhook

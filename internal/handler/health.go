@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/devstroop/walink/internal/middleware"
-	"github.com/devstroop/walink/internal/service"
+	"github.com/devstroop/notalk/internal/middleware"
+	"github.com/devstroop/notalk/internal/service"
 )
 
 // Health returns a simple health check response.

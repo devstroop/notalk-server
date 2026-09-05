@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/devstroop/walink/internal/database"
-	"github.com/devstroop/walink/internal/model"
-	"github.com/devstroop/walink/internal/service"
+	"github.com/devstroop/notalk/internal/database"
+	"github.com/devstroop/notalk/internal/model"
+	"github.com/devstroop/notalk/internal/service"
 	qrcode "github.com/skip2/go-qrcode"
 )
 

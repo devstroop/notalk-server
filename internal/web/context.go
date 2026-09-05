@@ -3,12 +3,12 @@ package web
 import (
 	"net/http"
 
-	"github.com/devstroop/walink/internal/middleware"
+	"github.com/devstroop/notalk/internal/middleware"
 )
 
 // PageData is the top-level data passed to every page template.
 type PageData struct {
-	Title    string              // Browser tab title (e.g. "Dashboard — WaLink")
+	Title    string              // Browser tab title (e.g. "Dashboard — NoTalk")
 	Heading  string              // Page heading (e.g. "Dashboard")
 	Page     string              // Active sidebar item: "dashboard", "accounts", etc.
 	Version  string              // App version for footer

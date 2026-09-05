@@ -7,7 +7,7 @@ import (
 	"net/smtp"
 	"strings"
 
-	"github.com/devstroop/walink/internal/config"
+	"github.com/devstroop/notalk/internal/config"
 )
 
 // Client sends emails via SMTP.

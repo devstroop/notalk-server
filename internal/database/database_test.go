@@ -7,9 +7,9 @@ import (
 
 func openTestDB(t *testing.T) *DB {
 	t.Helper()
-	dsn := os.Getenv("WALINK_TEST_DSN")
+	dsn := os.Getenv("NOTALK_TEST_DSN")
 	if dsn == "" {
-		t.Skip("WALINK_TEST_DSN not set, skipping database tests")
+		t.Skip("NOTALK_TEST_DSN not set, skipping database tests")
 	}
 	db, err := Open(dsn)
 	if err != nil {

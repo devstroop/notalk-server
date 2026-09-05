@@ -1,4 +1,4 @@
-/* WaLink — custom styles (Tailwind CDN handles the rest) */
+/* NoTalk — custom styles (Tailwind CDN handles the rest) */
 
 /* Alpine.js cloak — hide elements until Alpine initializes */
 [x-cloak] { display: none !important; }

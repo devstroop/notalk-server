@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/devstroop/walink/internal/database"
+	"github.com/devstroop/notalk/internal/database"
 )
 
 // MCPHandler manages MCP server settings via REST API.

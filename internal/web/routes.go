@@ -4,10 +4,10 @@ import (
 	"io/fs"
 	"net/http"
 
-	"github.com/devstroop/walink/internal/config"
-	"github.com/devstroop/walink/internal/database"
-	"github.com/devstroop/walink/internal/service"
-	smtpclient "github.com/devstroop/walink/internal/smtp"
+	"github.com/devstroop/notalk/internal/config"
+	"github.com/devstroop/notalk/internal/database"
+	"github.com/devstroop/notalk/internal/service"
+	smtpclient "github.com/devstroop/notalk/internal/smtp"
 )
 
 // Handler serves the web UI.
@@ -175,7 +175,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 // page builds a PageData with common fields filled in.
 func (h *Handler) page(w http.ResponseWriter, r *http.Request, title, activePage string, data any) PageData {
 	return PageData{
-		Title:    title + " — WaLink",
+		Title:    title + " — NoTalk",
 		Heading:  title,
 		Page:     activePage,
 		Version:  h.version,

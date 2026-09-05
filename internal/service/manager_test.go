@@ -6,16 +6,16 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/devstroop/walink/internal/config"
-	"github.com/devstroop/walink/internal/database"
-	"github.com/devstroop/walink/internal/model"
+	"github.com/devstroop/notalk/internal/config"
+	"github.com/devstroop/notalk/internal/database"
+	"github.com/devstroop/notalk/internal/model"
 )
 
 func setupManager(t *testing.T) *AccountManager {
 	t.Helper()
-	dsn := os.Getenv("WALINK_TEST_DSN")
+	dsn := os.Getenv("NOTALK_TEST_DSN")
 	if dsn == "" {
-		t.Skip("WALINK_TEST_DSN not set, skipping manager tests")
+		t.Skip("NOTALK_TEST_DSN not set, skipping manager tests")
 	}
 	dir := t.TempDir()
 
@@ -184,9 +184,9 @@ func TestManagerDeleteAccountNotFound(t *testing.T) {
 }
 
 func TestManagerDiscoverAccounts(t *testing.T) {
-	dsn := os.Getenv("WALINK_TEST_DSN")
+	dsn := os.Getenv("NOTALK_TEST_DSN")
 	if dsn == "" {
-		t.Skip("WALINK_TEST_DSN not set, skipping manager tests")
+		t.Skip("NOTALK_TEST_DSN not set, skipping manager tests")
 	}
 	dir := t.TempDir()
 

@@ -11,8 +11,8 @@ import (
 
 	qrcode "github.com/skip2/go-qrcode"
 
-	"github.com/devstroop/walink/internal/model"
-	"github.com/devstroop/walink/internal/service"
+	"github.com/devstroop/notalk/internal/model"
+	"github.com/devstroop/notalk/internal/service"
 )
 
 // ── Session ─────────────────────────────────────────

@@ -1,4 +1,4 @@
-// WaLink — minimal client-side JavaScript
+// NoTalk — minimal client-side JavaScript
 // Most interactivity is handled by htmx + Alpine.js
 
 document.addEventListener('DOMContentLoaded', function() {

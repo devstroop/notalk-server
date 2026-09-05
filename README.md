@@ -1,4 +1,4 @@
-# WaLink
+# NoTalk
 
 **WhatsApp HTTP API + MCP server.** Multi-account WhatsApp over the native multi-device protocol — REST API, MCP for AI agents, and a web dashboard in a single Go binary. No browser, no Selenium.
 
@@ -10,7 +10,7 @@
 - **Phone-first** — `?phone=9198…` auto-resolves to JID (`@s.whatsapp.net` / `@g.us` / LID)
 - **MCP** — 26 tools (`send_message`, `list_chats`, `create_group`, …) via Streamable HTTP at fixed `/mcp`
 - **Web dashboard** — HTMX UI for accounts, chats, admin (users/roles/keys/billing)
-- **Auth + RBAC** — secret key → JWT → API key (`walink_…`), `resource:action` permissions (`*` for admin)
+- **Auth + RBAC** — secret key → JWT → API key (`notalk_…`), `resource:action` permissions (`*` for admin)
 - **Browserless** — Noise + Signal + Protobuf over encrypted WebSocket (`whatsmeow`)
 - **Pure Go** — single binary, `CGO_ENABLED=0`, no runtime deps
 - **Resilient** — auto-connect on demand, idle disconnect (`idle_timeout`), crash recovery
@@ -21,7 +21,7 @@
 
 - Go `1.26` (`main go 1.26`, `whatsmeow` toolchain `go1.27`)
 - PostgreSQL `16`+ (compose uses `postgres:18-alpine` → mount `pg-data:/var/lib/postgresql` — required for 18+, see `postgres#1259` / `PGDATA` parent)
-- `WALINK_AUTH_SECRET_KEY` set in production
+- `NOTALK_AUTH_SECRET_KEY` set in production
 
 ## Quick Start
 
@@ -29,14 +29,14 @@
 # 1. config
 cp config/app.example.toml config/app.toml   # set secret_key
 # 2. run
-go run ./cmd/walink
+go run ./cmd/notalk
 # or
-go build -trimpath -o /tmp/walink ./cmd/walink && \
-  WALINK_DATABASE_DSN=postgres://walink:walink@localhost:5432/walink?sslmode=disable /tmp/walink
+go build -trimpath -o /tmp/notalk ./cmd/notalk && \
+  NOTALK_DATABASE_DSN=postgres://notalk:notalk@localhost:5432/notalk?sslmode=disable /tmp/notalk
 ```
 
 ```bash
-# Docker (PostgreSQL + WaLink)
+# Docker (PostgreSQL + NoTalk)
 docker compose up -d          # → http://localhost:3000
 curl -sf http://localhost:3000/api/health  # {"status":"ok"}
 docker compose logs -f
@@ -72,9 +72,9 @@ All `/api/v1/*` require `Authorization: Bearer <token>`.
 
 | Method | Format | Scope | Use case |
 |--------|--------|-------|----------|
-| Secret key | `Bearer <secret_key>` (`WALINK_AUTH_SECRET_KEY`) | `*` | System admin, no user context |
+| Secret key | `Bearer <secret_key>` (`NOTALK_AUTH_SECRET_KEY`) | `*` | System admin, no user context |
 | JWT | `Bearer eyJ…` (`POST /api/v1/auth/login`) | `role.permissions` | User login |
-| API key | `Bearer walink_…` (`POST /api/v1/api-keys`) | `user + optional account_id` + expiry | Programmatic, MCP account-scoping |
+| API key | `Bearer notalk_…` (`POST /api/v1/api-keys`) | `user + optional account_id` + expiry | Programmatic, MCP account-scoping |
 
 **Public (no auth):** `POST /api/v1/auth/login`, `/register` (if enabled), `/forgot-password`, `/reset-password`, `GET /api/health`, `GET /api/v1/billing/plans`.
 
@@ -182,14 +182,14 @@ Full interactive docs: `http://localhost:3000/api-docs` (Swagger, `internal/hand
 
 ## MCP Server
 
-Fixed endpoint `http://localhost:3000/mcp` (Streamable HTTP, stateful SSE, `10m` idle TTL). Auth: `Authorization: Bearer <secret_key>` or `Bearer walink_…` (account-scoped keys auto-bind `account_id`).
+Fixed endpoint `http://localhost:3000/mcp` (Streamable HTTP, stateful SSE, `10m` idle TTL). Auth: `Authorization: Bearer <secret_key>` or `Bearer notalk_…` (account-scoped keys auto-bind `account_id`).
 
 **VS Code / Copilot** `.vscode/mcp.json`:
 
 ```json
 {
   "servers": {
-    "walink": {
+    "notalk": {
       "type": "http",
       "url": "http://localhost:3000/mcp",
       "headers": { "Authorization": "Bearer <secret_key>" }
@@ -233,7 +233,7 @@ curl -X PUT http://localhost:3000/api/v1/accounts/{id}/webhook -H "$AUTH" -H "Co
 curl -X POST http://localhost:3000/api/v1/auth/login -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"secret"}' # → JWT
 curl -X POST http://localhost:3000/api/v1/api-keys -H "$AUTH" -H "Content-Type: application/json" \
-  -d '{"name":"bot","account_id":"{id}"}' # → walink_…
+  -d '{"name":"bot","account_id":"{id}"}' # → notalk_…
 ```
 
 ## Error Responses
@@ -255,7 +255,7 @@ curl -X POST http://localhost:3000/api/v1/api-keys -H "$AUTH" -H "Content-Type: 
 
 ## Configuration
 
-`config/app.example.toml` → `config/app.toml` (or `~/.walink/config.toml`). Env overrides `WALINK_*` — see `CONFIGURATION.md` for exact names (`WALINK_SERVER_PORT`, `WALINK_ACCOUNTS_DIR` not `WALINK_ACCOUNTS_BASE_DIRECTORY`, `WALINK_MCP_ENABLED`, `WALINK_CORS_ORIGINS`, `WALINK_WEBHOOKS_*`, etc.).
+`config/app.example.toml` → `config/app.toml` (or `~/.notalk/config.toml`). Env overrides `NOTALK_*` — see `CONFIGURATION.md` for exact names (`NOTALK_SERVER_PORT`, `NOTALK_ACCOUNTS_DIR` not `NOTALK_ACCOUNTS_BASE_DIRECTORY`, `NOTALK_MCP_ENABLED`, `NOTALK_CORS_ORIGINS`, `NOTALK_WEBHOOKS_*`, etc.).
 
 | Section | Key | Default | Description |
 |---------|-----|---------|-------------|
@@ -264,10 +264,10 @@ curl -X POST http://localhost:3000/api/v1/api-keys -H "$AUTH" -H "Content-Type: 
 | `auth` | `registration_enabled` | `false` | Public `POST /auth/register` |
 | `smtp` | `host`/`port`/`username`/`password`/`from`/`tls`/`starttls` | — / `587` / `true` | Password reset email |
 | `logging` | `level` | `info` | `trace`/`debug`/`info`/`warn`/`error` |
-| `database` | `dsn` | `postgres://localhost:5432/walink?sslmode=disable` | PostgreSQL DSN |
+| `database` | `dsn` | `postgres://localhost:5432/notalk?sslmode=disable` | PostgreSQL DSN |
 | `cors` | `allow_origins` | `["*"]` | CORS |
 | `limits` | `max_concurrent_requests` / `request_timeout_ms` / `max_upload_size` | `50` / `30000` / `10MiB` | Rate limit |
-| `accounts` | `base_directory` | `~/.walink/accounts` | Session cache dir |
+| `accounts` | `base_directory` | `~/.notalk/accounts` | Session cache dir |
 | `accounts.defaults` | `idle_timeout` | `300` | Auto-disconnect (0 = never) |
 | `webhooks` | `enabled` / `timeout_ms` / `retry_count` / `retry_delay_ms` | `false` / `5000` / `3` / `1000` | Webhook |
 | `swagger` | `enabled` / `path` | `true` / `/api-docs` | Swagger UI |
@@ -276,19 +276,19 @@ curl -X POST http://localhost:3000/api/v1/api-keys -H "$AUTH" -H "Content-Type: 
 | `billing` | `enabled` / `stripe_secret_key` / `stripe_webhook_secret` / `default_plan` | `false` / — / — / `free` | Stripe billing |
 | `llm` | `enabled` / `provider` / `api_key` / `base_url` / `model` | `false` / `openai` / — | Copilot/Autopilot |
 
-See `CONFIGURATION.md` for full TOML + env table. Docker compose maps these to `WALINK_*`.
+See `CONFIGURATION.md` for full TOML + env table. Docker compose maps these to `NOTALK_*`.
 
 **Notes:** `secret_key` signs JWTs; `idle_timeout` polls every 30s; MCP `enabled` toggles without restart via DB `setting` + `PATCH /api/v1/mcp`; billing middleware gates `messages`, `mcp`, `webhooks` (system `secret_key` bypasses).
 
 ## Architecture
 
-See `docs/architecture.md` — Mermaid overview, project layout (`cmd/walink/main.go`, `internal/{config,database,handler,mcpserver,middleware,service,web}`), request flows (HTTP + MCP `sequenceDiagram`), data layout (PostgreSQL `account`, `app_user`, `api_key`, `setting`, `plans` + `~/.walink/accounts/{uuid}/`), and Noise/Signal/Protobuf protocol.
+See `docs/architecture.md` — Mermaid overview, project layout (`cmd/notalk/main.go`, `internal/{config,database,handler,mcpserver,middleware,service,web}`), request flows (HTTP + MCP `sequenceDiagram`), data layout (PostgreSQL `account`, `app_user`, `api_key`, `setting`, `plans` + `~/.notalk/accounts/{uuid}/`), and Noise/Signal/Protobuf protocol.
 
 ## Development
 
 ```bash
 go vet ./...
-go test -race -count=1 -timeout 120s ./...         # unit + integration (needs WALINK_TEST_DSN)
+go test -race -count=1 -timeout 120s ./...         # unit + integration (needs NOTALK_TEST_DSN)
 golangci-lint run --timeout 5m
 docker compose config --quiet && docker compose build && docker compose up -d && curl -sf http://localhost:3000/api/health
 ```

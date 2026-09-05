@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/devstroop/walink/internal/model"
+	"github.com/devstroop/notalk/internal/model"
 )
 
 // ─── helpers ────────────────────────────────────────
@@ -352,8 +352,8 @@ func TestAPIKeyCRUD(t *testing.T) {
 	}
 	var key1 model.CreateAPIKeyResponse
 	decodeInto(t, resp, &key1)
-	if !strings.HasPrefix(key1.Key, "walink_") {
-		t.Errorf("expected walink_ prefix, got %s", key1.Key[:10])
+	if !strings.HasPrefix(key1.Key, "notalk_") {
+		t.Errorf("expected notalk_ prefix, got %s", key1.Key[:10])
 	}
 	if key1.Name != "Basic Key" {
 		t.Errorf("expected 'Basic Key', got %s", key1.Name)
@@ -506,7 +506,7 @@ func TestAPIKeyRevokedKeyRejected(t *testing.T) {
 
 func TestAPIKeyInvalidFormatRejected(t *testing.T) {
 	srv, _ := testServer(t)
-	resp := doReq(t, srv, "GET", "/api/v1/api-keys", "walink_invalid", "")
+	resp := doReq(t, srv, "GET", "/api/v1/api-keys", "notalk_invalid", "")
 	expectStatus(t, resp, 401)
 }
 

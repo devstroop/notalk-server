@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/devstroop/walink/internal/service"
+	"github.com/devstroop/notalk/internal/service"
 )
 
 // GetMessages — GET /api/v1/accounts/{account_id}/messages?chat=...&limit=...&before=...

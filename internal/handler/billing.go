@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/devstroop/walink/internal/database"
-	"github.com/devstroop/walink/internal/middleware"
-	"github.com/devstroop/walink/internal/model"
+	"github.com/devstroop/notalk/internal/database"
+	"github.com/devstroop/notalk/internal/middleware"
+	"github.com/devstroop/notalk/internal/model"
 )
 
 // BillingHandler handles plan, subscription, and usage endpoints.

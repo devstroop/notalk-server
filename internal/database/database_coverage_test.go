@@ -336,7 +336,7 @@ func TestAPIKeyCRUDCoverage(t *testing.T) {
 		t.Fatal(err)
 	}
 	accID := "acc-apikey"
-	rec := &APIKeyRecord{ID: "k1", UserID: "u-apikey", AccountID: &accID, Name: "key1", Prefix: "walink_k", KeyHash: "hash1", Enabled: true}
+	rec := &APIKeyRecord{ID: "k1", UserID: "u-apikey", AccountID: &accID, Name: "key1", Prefix: "notalk_k", KeyHash: "hash1", Enabled: true}
 	if err := db.CreateAPIKey(rec); err != nil {
 		t.Fatal(err)
 	}
@@ -385,7 +385,7 @@ func TestAPIKeyCRUDCoverage(t *testing.T) {
 	}
 	// expiry
 	exp := time.Now().Add(24 * time.Hour).Format(time.RFC3339)
-	rec2 := &APIKeyRecord{ID: "k2", UserID: "u-apikey", Name: "k2", Prefix: "walink_k2", KeyHash: "hash2", ExpiresAt: &exp, Enabled: true}
+	rec2 := &APIKeyRecord{ID: "k2", UserID: "u-apikey", Name: "k2", Prefix: "notalk_k2", KeyHash: "hash2", ExpiresAt: &exp, Enabled: true}
 	if err := db.CreateAPIKey(rec2); err != nil {
 		t.Fatal(err)
 	}

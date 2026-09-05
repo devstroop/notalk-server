@@ -1,47 +1,47 @@
 services:
   postgres:
     image: postgres:18-alpine
-    container_name: walink-postgres
+    container_name: notalk-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: walink
-      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-walink}"
-      POSTGRES_DB: walink
+      POSTGRES_USER: notalk
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}"
+      POSTGRES_DB: notalk
     volumes:
       - pg-data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U walink -d walink"]
+      test: ["CMD-SHELL", "pg_isready -U notalk -d notalk"]
       interval: 2s
       timeout: 2s
       retries: 30
       start_period: 15s
 
-  walink:
+  notalk:
     build: .
-    container_name: walink
+    container_name: notalk
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
     ports:
-      - "${WALINK_SERVER_PORT:-3000}:${WALINK_SERVER_PORT:-3000}"
+      - "${NOTALK_SERVER_PORT:-3000}:${NOTALK_SERVER_PORT:-3000}"
     volumes:
-      - walink-data:/data
+      - notalk-data:/data
     environment:
       TZ: UTC
-      WALINK_SERVER_HOST: "0.0.0.0"
-      WALINK_SERVER_PORT: "${WALINK_SERVER_PORT:-3000}"
-      WALINK_AUTH_SECRET_KEY: "${WALINK_AUTH_SECRET_KEY:-change-this-secret-key-in-production}"
-      WALINK_LOG_LEVEL: "${WALINK_LOG_LEVEL:-info}"
-      WALINK_DATABASE_DSN: "postgres://walink:${POSTGRES_PASSWORD:-walink}@postgres:5432/walink?sslmode=disable"
-      WALINK_ACCOUNTS_DIR: "/data/accounts"
-      WALINK_CORS_ORIGINS: "${WALINK_CORS_ORIGINS:-*}"
-      WALINK_AUTH_REGISTRATION_ENABLED: "${WALINK_AUTH_REGISTRATION_ENABLED:-true}"
-      WALINK_SWAGGER_ENABLED: "${WALINK_SWAGGER_ENABLED:-true}"
-      WALINK_BILLING_ENABLED: "${WALINK_BILLING_ENABLED:-false}"
-      WALINK_BILLING_STRIPE_SECRET_KEY: "${WALINK_BILLING_STRIPE_SECRET_KEY:-}"
-      WALINK_BILLING_STRIPE_WEBHOOK_SECRET: "${WALINK_BILLING_STRIPE_WEBHOOK_SECRET:-}"
+      NOTALK_SERVER_HOST: "0.0.0.0"
+      NOTALK_SERVER_PORT: "${NOTALK_SERVER_PORT:-3000}"
+      NOTALK_AUTH_SECRET_KEY: "${NOTALK_AUTH_SECRET_KEY:-change-this-secret-key-in-production}"
+      NOTALK_LOG_LEVEL: "${NOTALK_LOG_LEVEL:-info}"
+      NOTALK_DATABASE_DSN: "postgres://notalk:${POSTGRES_PASSWORD}@postgres:5432/notalk?sslmode=disable"
+      NOTALK_ACCOUNTS_DIR: "/data/accounts"
+      NOTALK_CORS_ORIGINS: "${NOTALK_CORS_ORIGINS:-*}"
+      NOTALK_AUTH_REGISTRATION_ENABLED: "${NOTALK_AUTH_REGISTRATION_ENABLED:-true}"
+      NOTALK_SWAGGER_ENABLED: "${NOTALK_SWAGGER_ENABLED:-true}"
+      NOTALK_BILLING_ENABLED: "${NOTALK_BILLING_ENABLED:-false}"
+      NOTALK_BILLING_STRIPE_SECRET_KEY: "${NOTALK_BILLING_STRIPE_SECRET_KEY:-}"
+      NOTALK_BILLING_STRIPE_WEBHOOK_SECRET: "${NOTALK_BILLING_STRIPE_WEBHOOK_SECRET:-}"
 
 volumes:
   pg-data:
-  walink-data:
+  notalk-data:

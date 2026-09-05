@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/devstroop/walink/internal/database"
+	"github.com/devstroop/notalk/internal/database"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -349,7 +349,7 @@ func (h *Handler) APIKeysCreate(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "key generation failed"})
 		return
 	}
-	plainKey := "walink_" + hex.EncodeToString(rawBytes)
+	plainKey := "notalk_" + hex.EncodeToString(rawBytes)
 	prefix := plainKey[:15]
 	hash := sha256.Sum256([]byte(plainKey))
 	keyHash := hex.EncodeToString(hash[:])
@@ -1091,7 +1091,7 @@ func (h *Handler) SubscriptionPage(w http.ResponseWriter, r *http.Request) {
 // NotFound renders the styled 404 error page.
 func (h *Handler) NotFound(w http.ResponseWriter, r *http.Request) {
 	pd := PageData{
-		Title: "Not Found — WaLink",
+		Title: "Not Found — NoTalk",
 		Page:  "error",
 		Data: map[string]any{
 			"Code":    "404",

@@ -69,13 +69,13 @@ jobs:
           for platform in "${platforms[@]}"; do
             GOOS="${platform%/*}"
             GOARCH="${platform#*/}"
-            output="walink-${GOOS}-${GOARCH}"
+            output="notalk-${GOOS}-${GOARCH}"
             if [ "$GOOS" = "windows" ]; then
               output="${output}.exe"
             fi
             echo "Building ${output}..."
             CGO_ENABLED=0 GOOS="$GOOS" GOARCH="$GOARCH" \
-              go build -trimpath -ldflags "$LDFLAGS" -o "dist/${output}" ./cmd/walink
+              go build -trimpath -ldflags "$LDFLAGS" -o "dist/${output}" ./cmd/notalk
           done
 
       - name: Compress binaries
@@ -83,7 +83,7 @@ jobs:
         run: |
           set -euo pipefail
           cd dist
-          for f in walink-*; do
+          for f in notalk-*; do
             if [[ "$f" == *.exe ]]; then
               zip "${f%.exe}.zip" "$f"
               rm "$f"
