@@ -11,7 +11,7 @@ flowchart TB
     Web["Web Dashboard<br/>(notalk-web)"] <-->|HTTP/JSON| Server
 
     subgraph Server["NoTalk Server"]
-        Handlers["Handlers<br/>(REST)"] --- Middleware["Middleware<br/>(Auth, RBAC, CORS, Billing)"]
+        Handlers["Handlers<br/>(REST)"] --- Middleware["Middleware<br/>(Auth, RBAC, CORS)"]
         Handlers --> AccountManager["AccountManager<br/>(multi-account)"]
         AccountManager --> Account["Account<br/>(whatsmeow.Client)"]
         Account --- PG[("PostgreSQL<br/>(store)")]
@@ -36,16 +36,13 @@ notalk/
     ├── config/config.go            Config loading & defaults
     ├── database/
     │   ├── database.go             Account registry, users, roles, API keys, settings (PostgreSQL)
-    │   └── billing.go              Plans, subscriptions, usage tracking
     ├── handler/
-    │   ├── routes.go               REST API route registration (~55 handlers + 11 billing, see openapi.json)
     │   ├── accounts.go             Account CRUD
     │   ├── whatsapp.go             WhatsApp operations (messaging, groups, etc.)
     │   ├── auth.go                 Login, register, password reset
     │   ├── users.go                User CRUD (admin)
     │   ├── roles.go                Role CRUD (admin)
     │   ├── apikeys.go              API key management
-    │   ├── billing.go              Plans, subscriptions, usage
     │   ├── mcp.go                  MCP settings (toggle on/off)
     │   ├── health.go               Health check
     │   ├── proxy.go                Per-account proxy config
@@ -53,8 +50,6 @@ notalk/
     │   ├── messages.go             Message send/history/react/revoke
     │   └── swagger.go              Swagger UI handler
     ├── mcpserver/server.go         MCP tool definitions (26 tools)
-    ├── middleware/middleware.go     Auth (JWT + API key + secret), RBAC, CORS, rate limit, billing
-    ├── model/model.go              Request/response types, billing models
     ├── service/
     │   ├── account.go              WhatsApp-backed account lifecycle
     │   ├── manager.go              Multi-account orchestration
@@ -93,7 +88,6 @@ PostgreSQL database storing:
 - Roles and permissions (`resource:action` format)
 - API keys (SHA-256 hashed, expiry, account binding)
  - Settings (key-value store for runtime config like MCP toggle)
-- Billing: plans, subscriptions, daily usage
 
 ### MCP Server (`mcpserver/server.go`)
 
@@ -106,7 +100,6 @@ PostgreSQL database storing:
 - **MCPScope**: Auto-scopes MCP requests to the API key's bound account.
 - **CORS**: Configurable origins, methods, headers with preflight support.
 - **RateLimit**: Semaphore-based concurrent request limiter (429 when full).
-- **BillingEnforcer**: Optional plan-based enforcement (message quotas, feature gates).
 
 ## Request Flow
 
@@ -117,7 +110,6 @@ flowchart LR
     A["HTTP Request"] --> B["CORS"]
     B --> C["Auth<br/>(secret / JWT / API key)"]
     C --> D["RBAC<br/>RequirePermission"]
-    D --> E["BillingEnforcer<br/>(if enabled)"]
     E --> F["Handler<br/>(route matched)"]
     F --> G["AccountManager.GetAccount(id)"]
     G --> H["Account.EnsureConnected()<br/>auto-warms if sleeping"]
@@ -158,8 +150,6 @@ flowchart LR
     subgraph PG["PostgreSQL (notalk DB)"]
         A["account<br/>app_user / role / permissions"]
         B["api_key<br/>(SHA-256, expiry, binding)"]
-        C["settings<br/>(mcp.enabled, billing, etc)"]
-        D["billing<br/>plans / subscriptions / usage"]
         E["whatsmeow store<br/>(sessions, keys)"]
     end
 

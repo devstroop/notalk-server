@@ -41,24 +41,6 @@ func (a *API) CreateAccount(w http.ResponseWriter, r *http.Request) {
 		req.UserID = identity.UserID
 	}
 
-	// ── Plan: enforce account cap (only when billing is enabled) ──
-	ownerID := req.UserID
-	if a.billingEnabled && ownerID != "" && ownerID != "system" {
-		limits, _, _ := a.db.GetUserPlanLimits(ownerID)
-		if limits.MaxAccounts > 0 {
-			current, _ := a.db.CountUserAccounts(ownerID)
-			if current >= limits.MaxAccounts {
-				writeJSON(w, http.StatusTooManyRequests, model.QuotaExceededResponse{
-					Error:      "account limit reached for your plan",
-					Limit:      limits.MaxAccounts,
-					Used:       current,
-					UpgradeURL: "/api/v1/billing/plans",
-				})
-				return
-			}
-		}
-	}
-
 	resp, err := a.mgr.CreateAccount(req)
 	if err != nil {
 		writeError(w, http.StatusConflict, err.Error())

@@ -56,9 +56,3 @@ path = "/api-docs"
 
 [mcp]
 enabled = true       # Enable/disable MCP server (can also toggle at runtime via admin UI)
-
-[billing]
-enabled = false                        # Set to true to enable plan-based billing
-# stripe_secret_key = "sk_..."         # Stripe secret key (for paid plans)
-# stripe_webhook_secret = "whsec_..." # Stripe webhook signing secret
-default_plan = "free"                  # Plan assigned to new users

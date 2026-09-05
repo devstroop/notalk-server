@@ -128,18 +128,6 @@ func TestEnvOverridesFull(t *testing.T) {
 	if cfg.MCP.Enabled {
 		t.Error("mcp should be false")
 	}
-	if !cfg.Billing.Enabled {
-		t.Error("billing")
-	}
-	if cfg.Billing.StripeSecretKey != "sk_test" {
-		t.Error("stripe secret")
-	}
-	if cfg.Billing.StripeWebhookSecret != "whsec_test" {
-		t.Error("stripe webhook")
-	}
-	if cfg.Billing.DefaultPlan != "pro" {
-		t.Error("default plan")
-	}
 	if !cfg.LLM.Enabled {
 		t.Error("llm enabled")
 	}
@@ -232,9 +220,6 @@ func TestDefaultsAllFields(t *testing.T) {
 	cfg := defaults()
 	if cfg.Server.Host != "0.0.0.0" {
 		t.Error("host")
-	}
-	if cfg.Billing.DefaultPlan != "free" {
-		t.Error("default plan")
 	}
 	if !cfg.MCP.Enabled {
 		t.Error("mcp default")

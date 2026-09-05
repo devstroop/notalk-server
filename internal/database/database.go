@@ -1,6 +1,7 @@
 package database
 
 import (
+	"github.com/google/uuid"
 	"database/sql"
 	"fmt"
 	"time"
@@ -126,6 +127,8 @@ func Open(dsn string) (*DB, error) {
 	}
 	return d, nil
 }
+
+func GenerateID() string { return uuid.New().String() }
 
 func (d *DB) Close() error { return d.db.Close() }
 
@@ -296,11 +299,6 @@ func (d *DB) migrate() error {
 
 	// ── Seed built-in roles ─────────────────────────
 	if err := d.seedRoles(); err != nil {
-		return err
-	}
-
-	// ── Billing tables (plan, subscription, usage) ──
-	if err := d.migrateBilling(); err != nil {
 		return err
 	}
 

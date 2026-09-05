@@ -53,12 +53,12 @@ func testServerWithDB(t *testing.T) (*httptest.Server, *service.AccountManager, 
 	}
 	t.Cleanup(func() { _ = db.Close() })
 
-	// Clean mutable tables for test isolation (preserve builtin roles/plans).
+	// Clean mutable tables for test isolation (preserve builtin roles).
 	raw, _ := sql.Open("postgres", dsn)
 	if raw != nil {
 		for _, table := range []string{
 			"password_reset_token", "api_key", "agent_log", "agent_config", "agent_session",
-			"usage", "subscription", "message", "webhook_config", "proxy_config",
+			"message", "webhook_config", "proxy_config",
 			"account", "app_user",
 		} {
 			_, _ = raw.Exec("DELETE FROM " + table + " WHERE TRUE")

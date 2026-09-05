@@ -57,12 +57,6 @@ path = "/api-docs"
 
 [mcp]
 enabled = true          # Enable/disable MCP server (can also toggle at runtime via admin UI)
-
-[billing]
-enabled = false                        # Set to true to enable plan-based billing
-# stripe_secret_key = "sk_..."         # Stripe secret key (for paid plans)
-# stripe_webhook_secret = "whsec_..."  # Stripe webhook signing secret
-default_plan = "free"                  # Plan assigned to new users
 ```
 
 ## Environment Variables
@@ -80,13 +74,12 @@ All config keys map to environment variables with the `NOTALK_` prefix. Nested k
 | `accounts.base_directory` | `NOTALK_ACCOUNTS_DIR` | `/data/accounts` |
 | `cors.allow_origins` | `NOTALK_CORS_ORIGINS` | `*` |
 | `swagger.enabled` | `NOTALK_SWAGGER_ENABLED` | `true` |
-| `billing.enabled` | `NOTALK_BILLING_ENABLED` | `false` |
 
 ## Data Layout
 
 ```
 PostgreSQL:
-- account, app_user, role, api_key, message, webhook_config, proxy_config, subscription, usage, agent_* tables
+- account, app_user, role, api_key, message, webhook_config, proxy_config, usage, agent_* tables
 - Each account's WhatsApp session stored via whatsmeow PostgreSQL store (sqlstore)
 
 File system:
@@ -109,4 +102,4 @@ Data is persisted in a named volume (`notalk-data`) mounted at `/data`.
 - **Idle timeout**: A background goroutine polls every 30s. When an account has been idle longer than `idle_timeout`, it disconnects automatically. Any API request to that account reconnects it on demand.
 - **secret_key**: Used for Bearer token auth and JWT signing. All API endpoints under `/api/v1/` require authentication. Health and public auth endpoints are unauthenticated.
 - **MCP runtime toggle**: The MCP endpoint can be enabled/disabled at runtime via the admin UI or `PATCH /api/v1/mcp` without restarting the server.
-- **Billing enforcement**: When enabled, the billing middleware checks message quotas and feature gates (MCP access, webhooks) against the user's plan. System admin (secret key) bypasses all billing.
+- **Billing**: Removed in current develop (billing stack deleted).

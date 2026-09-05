@@ -10,6 +10,7 @@ import (
 
 	"github.com/devstroop/notalk/internal/database"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 )
 
@@ -26,7 +27,7 @@ func cleanDB(t *testing.T) {
 	defer func() { _ = raw.Close() }()
 	for _, table := range []string{
 		"password_reset_token", "api_key", "agent_log", "agent_config", "agent_session",
-		"usage", "subscription", "message", "webhook_config", "proxy_config",
+		"message", "webhook_config", "proxy_config",
 		"account", "role_permission", "app_user",
 	} {
 		_, _ = raw.Exec("DELETE FROM " + table + " WHERE TRUE")
@@ -154,154 +155,6 @@ func TestRateLimit(t *testing.T) {
 	}
 }
 
-func TestBillingEnforcerDisabled(t *testing.T) {
-	h := BillingEnforcer(nil, false)(okHandler)
-	req := httptest.NewRequest("GET", "/api/v1/accounts", nil)
-	w := httptest.NewRecorder()
-	h.ServeHTTP(w, req)
-	if w.Code != 200 {
-		t.Error("disabled should pass")
-	}
-}
-
-func TestBillingEnforcerSystemBypass(t *testing.T) {
-	cleanDB(t)
-	dsn := os.Getenv("NOTALK_TEST_DSN")
-	if dsn == "" {
-		t.Skip("NOTALK_TEST_DSN not set")
-	}
-	db, err := database.Open(dsn)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = db.Close() }()
-
-	h := BillingEnforcer(db, true)(okHandler)
-	// system admin bypass
-	id := &Identity{UserID: "system", RoleName: "admin", Permissions: []string{"*"}}
-	req := httptest.NewRequest("GET", "/api/v1/accounts", nil)
-	req = req.WithContext(context.WithValue(req.Context(), identityKey, id))
-	w := httptest.NewRecorder()
-	h.ServeHTTP(w, req)
-	if w.Code != 200 {
-		t.Errorf("system should bypass got %d", w.Code)
-	}
-	// no identity
-	req = httptest.NewRequest("GET", "/api/v1/accounts", nil)
-	w = httptest.NewRecorder()
-	h.ServeHTTP(w, req)
-	if w.Code != 200 {
-		t.Error("no identity should pass to next (auth will handle)")
-	}
-}
-
-func TestBillingEnforcerQuotaAndGates(t *testing.T) {
-	cleanDB(t)
-	dsn := os.Getenv("NOTALK_TEST_DSN")
-	if dsn == "" {
-		t.Skip("NOTALK_TEST_DSN not set")
-	}
-	db, err := database.Open(dsn)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = db.Close() }()
-	// create user with free plan (20 msgs)
-	uid := "bill-" + database.GenerateID()
-	// create user
-	if err := db.CreateUser(&database.UserRecord{ID: uid, Username: "billuser-" + uid, Email: "b@e.com", PasswordHash: "h", RoleID: "builtin-user", Enabled: true}); err != nil {
-		t.Fatalf("CreateUser: %v", err)
-	}
-	if err := db.EnsureUserSubscription(uid, "free"); err != nil {
-		t.Fatalf("EnsureUserSubscription: %v", err)
-	}
-	// ensure we have a user with free plan
-	h := BillingEnforcer(db, true)(okHandler)
-
-	id := &Identity{UserID: uid, RoleName: "user", Permissions: []string{"messages:*"}}
-
-	// Test message quota not exceeded (should pass)
-	req := httptest.NewRequest("POST", "/api/v1/accounts/123/messages", nil)
-	req = req.WithContext(context.WithValue(req.Context(), identityKey, id))
-	w := httptest.NewRecorder()
-	h.ServeHTTP(w, req)
-	if w.Code != 200 {
-		t.Errorf("expected 200 for under quota got %d", w.Code)
-	}
-
-	// Increment usage to limit
-	for i := 0; i < 20; i++ {
-		if _, err := db.IncrementUsage(uid); err != nil {
-			t.Fatalf("IncrementUsage %d: %v", i, err)
-		}
-	}
-	// verify usage
-	if usage, _ := db.GetDailyUsage(uid); usage != 20 {
-		t.Fatalf("expected usage 20 got %d", usage)
-	}
-	if limits, _, _ := db.GetUserPlanLimits(uid); limits.DailyMessages != 20 {
-		t.Fatalf("expected limits 20 got %d", limits.DailyMessages)
-	}
-	req = httptest.NewRequest("POST", "/api/v1/accounts/123/messages", nil)
-	req = req.WithContext(context.WithValue(req.Context(), identityKey, id))
-	w = httptest.NewRecorder()
-	h.ServeHTTP(w, req)
-	if w.Code != 429 {
-		t.Errorf("expected 429 over quota got %d", w.Code)
-	}
-
-	// Feature gate: mcp
-	req = httptest.NewRequest("GET", "/mcp", nil)
-	req = req.WithContext(context.WithValue(req.Context(), identityKey, id))
-	w = httptest.NewRecorder()
-	h.ServeHTTP(w, req)
-	if w.Code != 429 {
-		t.Errorf("expected 429 for mcp gate got %d", w.Code)
-	}
-
-	// webhook gate
-	req = httptest.NewRequest("PUT", "/api/v1/accounts/123/webhook", nil)
-	req = req.WithContext(context.WithValue(req.Context(), identityKey, id))
-	w = httptest.NewRecorder()
-	h.ServeHTTP(w, req)
-	if w.Code != 429 {
-		t.Errorf("expected 429 for webhook gate got %d", w.Code)
-	}
-	// GET webhook should pass (read)
-	req = httptest.NewRequest("GET", "/api/v1/accounts/123/webhook", nil)
-	req = req.WithContext(context.WithValue(req.Context(), identityKey, id))
-	w = httptest.NewRecorder()
-	h.ServeHTTP(w, req)
-	if w.Code != 200 {
-		t.Errorf("GET webhook should pass got %d", w.Code)
-	}
-}
-
-func TestIncrementMessageUsage(t *testing.T) {
-	cleanDB(t)
-	dsn := os.Getenv("NOTALK_TEST_DSN")
-	if dsn == "" {
-		t.Skip("NOTALK_TEST_DSN not set")
-	}
-	db, _ := database.Open(dsn)
-	defer func() { _ = db.Close() }()
-	// disabled
-	IncrementMessageUsage(db, false, "user1")
-	// system
-	IncrementMessageUsage(db, true, "system")
-	// empty
-	IncrementMessageUsage(db, true, "")
-	// valid - should not panic
-	incUID := "inc-" + database.GenerateID()
-	_ = db.CreateUser(&database.UserRecord{ID: incUID, Username: "incuser-" + incUID, Email: "i@e.com", PasswordHash: "h", RoleID: "builtin-user", Enabled: true})
-	IncrementMessageUsage(db, true, incUID)
-	// verify incremented
-	c, _ := db.GetDailyUsage(incUID)
-	if c != 1 {
-		t.Errorf("expected 1 got %d", c)
-	}
-}
-
 func TestAuthJWTAndAPIKey(t *testing.T) {
 	cleanDB(t)
 	dsn := os.Getenv("NOTALK_TEST_DSN")
@@ -312,10 +165,10 @@ func TestAuthJWTAndAPIKey(t *testing.T) {
 	defer func() { _ = db.Close() }()
 	secret := "test-secret-for-jwt"
 	// create user
-	uid := "jwt-" + database.GenerateID()
+	uid := "jwt-" + uuid.NewString()
 	_ = db.CreateUser(&database.UserRecord{ID: uid, Username: "jwtuser-" + uid, Email: "j@e.com", PasswordHash: "h", RoleID: "builtin-user", Enabled: true})
 	// disabled user cannot auth
-	uidDisabled := "jwt-dis-" + database.GenerateID()
+	uidDisabled := "jwt-dis-" + uuid.NewString()
 	_ = db.CreateUser(&database.UserRecord{ID: uidDisabled, Username: "disableduser-" + uidDisabled, Email: "d@e.com", PasswordHash: "h", RoleID: "builtin-user", Enabled: false})
 	// create JWT for disabled
 	claims := jwt.RegisteredClaims{Subject: uidDisabled}
@@ -410,13 +263,13 @@ func TestMCPScope(t *testing.T) {
 	}
 
 	// create user and account for ownership test
-	uid := "mcp-" + database.GenerateID()
+	uid := "mcp-" + uuid.NewString()
 	_ = db.CreateUser(&database.UserRecord{ID: uid, Username: "mcpuser1-" + uid, Email: "m@e.com", PasswordHash: "h", RoleID: "builtin-user", Enabled: true})
-	acc1 := "mcp-acc-" + database.GenerateID()
+	acc1 := "mcp-acc-" + uuid.NewString()
 	_ = db.CreateAccount(&database.AccountRecord{ID: acc1, PhoneNumber: "9000000001", AccountName: "a", DataDir: "/tmp/a", UserID: uid})
-	otherUID := "mcp-" + database.GenerateID()
+	otherUID := "mcp-" + uuid.NewString()
 	_ = db.CreateUser(&database.UserRecord{ID: otherUID, Username: "mcpuser2-" + otherUID, Email: "m2@e.com", PasswordHash: "h", RoleID: "builtin-user", Enabled: true})
-	acc2 := "mcp-acc-" + database.GenerateID()
+	acc2 := "mcp-acc-" + uuid.NewString()
 	_ = db.CreateAccount(&database.AccountRecord{ID: acc2, PhoneNumber: "9000000002", AccountName: "b", DataDir: "/tmp/b", UserID: otherUID})
 
 	owner := &Identity{UserID: uid, RoleName: "user", Permissions: []string{"messages:read"}}

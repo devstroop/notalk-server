@@ -55,8 +55,10 @@ func main() {
 	// Set whatsmeow PostgreSQL array wrapper for session stores
 	sqlstore.PostgresArrayWrapper = pq.Array
 
-	if cfg.Auth.SecretKey == "change-this-secret-key-in-production" {
-		log.Warn().Msg("using default auth secret key — set NOTALK_AUTH_SECRET_KEY for production")
+	if cfg.Auth.EffectiveJWTSecret() == "" || cfg.Auth.EffectiveJWTSecret() == "changeme" || cfg.Auth.EffectiveJWTSecret() == "change-this-secret-key-in-production" || cfg.Auth.EffectiveAdminSecret() == "" || cfg.Auth.EffectiveAdminSecret() == "changeme" || cfg.Auth.EffectiveAdminSecret() == "change-this-secret-key-in-production" {
+		log.Warn().Msg("using default auth secret key — set NOTALK_JWT_SECRET and NOTALK_ADMIN_SECRET for production (NOTALK_AUTH_SECRET_KEY fallback is deprecated)")
+	} else if cfg.Auth.UsesLegacySecret() {
+		log.Warn().Msg("using NOTALK_AUTH_SECRET_KEY fallback — set NOTALK_JWT_SECRET and NOTALK_ADMIN_SECRET to silence and to split JWT/admin boundaries")
 	}
 
 	// Open database
@@ -100,16 +102,13 @@ func main() {
 
 	// API v1 — all routes require auth
 	api := handler.NewAPI(mgr, db)
-	api.SetBillingEnabled(cfg.Billing.Enabled)
 	apiMux := http.NewServeMux()
 	api.RegisterRoutes(apiMux)
 	handler.RegisterRBACRoutes(apiMux, db)
-	handler.RegisterBillingRoutes(mux, apiMux, db)
 
-	// Wrap API routes with auth middleware, then billing enforcement, then rate limit
+	// Wrap API routes with auth middleware, then rate limit
 	authed := middleware.Auth(cfg.Auth.SecretKey, db, apiMux)
-	billed := middleware.BillingEnforcer(db, cfg.Billing.Enabled)(authed)
-	limited := middleware.RateLimit(cfg.Limits.MaxConcurrentRequests, billed)
+	limited := middleware.RateLimit(cfg.Limits.MaxConcurrentRequests, authed)
 	mux.Handle("/api/v1/", limited)
 
 	// MCP (Model Context Protocol) endpoint — auth + account scoping at fixed path /mcp

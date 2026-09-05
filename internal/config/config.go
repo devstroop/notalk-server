@@ -23,7 +23,6 @@ type Config struct {
 	Webhooks WebhookConfig  `toml:"webhooks"`
 	Swagger  SwaggerConfig  `toml:"swagger"`
 	MCP      MCPConfig       `toml:"mcp"`
-	Billing  BillingConfig   `toml:"billing"`
 	LLM      LLMConfig       `toml:"llm"`
 }
 
@@ -34,7 +33,33 @@ type ServerConfig struct {
 
 type AuthConfig struct {
 	SecretKey           string `toml:"secret_key"`
+	JWTSecret           string `toml:"jwt_secret"`
+	AdminSecret         string `toml:"admin_secret"`
 	RegistrationEnabled bool   `toml:"registration_enabled"`
+}
+
+// EffectiveJWTSecret returns the JWT HMAC secret, preferring NOTALK_JWT_SECRET
+// with fallback to NOTALK_AUTH_SECRET_KEY for compat.
+func (a AuthConfig) EffectiveJWTSecret() string {
+	if a.JWTSecret != "" {
+		return a.JWTSecret
+	}
+	return a.SecretKey
+}
+
+// EffectiveAdminSecret returns the static admin bearer secret, preferring
+// NOTALK_ADMIN_SECRET with fallback to NOTALK_AUTH_SECRET_KEY.
+func (a AuthConfig) EffectiveAdminSecret() string {
+	if a.AdminSecret != "" {
+		return a.AdminSecret
+	}
+	return a.SecretKey
+}
+
+// UsesLegacySecret reports whether NOTALK_AUTH_SECRET_KEY fallback is in use
+// for either JWT or admin auth (caller should log a startup warning).
+func (a AuthConfig) UsesLegacySecret() bool {
+	return (a.JWTSecret == "" && a.SecretKey != "") || (a.AdminSecret == "" && a.SecretKey != "")
 }
 
 type SMTPConfig struct {
@@ -85,13 +110,6 @@ type SwaggerConfig struct {
 
 type MCPConfig struct {
 	Enabled bool `toml:"enabled"`
-}
-
-type BillingConfig struct {
-	Enabled              bool   `toml:"enabled"`
-	StripeSecretKey      string `toml:"stripe_secret_key"`
-	StripeWebhookSecret  string `toml:"stripe_webhook_secret"`
-	DefaultPlan          string `toml:"default_plan"`
 }
 
 type LLMConfig struct {
@@ -148,8 +166,21 @@ func applyEnvOverrides(cfg *Config) {
 			cfg.Server.Port = n
 		}
 	}
+	if v := os.Getenv("NOTALK_JWT_SECRET"); v != "" {
+		cfg.Auth.JWTSecret = v
+	}
+	if v := os.Getenv("NOTALK_ADMIN_SECRET"); v != "" {
+		cfg.Auth.AdminSecret = v
+	}
 	if v := os.Getenv("NOTALK_AUTH_SECRET_KEY"); v != "" {
 		cfg.Auth.SecretKey = v
+		// Backfill split secrets for compat if explicit split not set
+		if cfg.Auth.JWTSecret == "" {
+			cfg.Auth.JWTSecret = v
+		}
+		if cfg.Auth.AdminSecret == "" {
+			cfg.Auth.AdminSecret = v
+		}
 	}
 	if v := os.Getenv("NOTALK_LOG_LEVEL"); v != "" {
 		cfg.Logging.Level = v
@@ -231,18 +262,6 @@ func applyEnvOverrides(cfg *Config) {
 	if v := os.Getenv("NOTALK_MCP_ENABLED"); v != "" {
 		cfg.MCP.Enabled = v == "true" || v == "1"
 	}
-	if v := os.Getenv("NOTALK_BILLING_ENABLED"); v != "" {
-		cfg.Billing.Enabled = v == "true" || v == "1"
-	}
-	if v := os.Getenv("NOTALK_BILLING_STRIPE_SECRET_KEY"); v != "" {
-		cfg.Billing.StripeSecretKey = v
-	}
-	if v := os.Getenv("NOTALK_BILLING_STRIPE_WEBHOOK_SECRET"); v != "" {
-		cfg.Billing.StripeWebhookSecret = v
-	}
-	if v := os.Getenv("NOTALK_BILLING_DEFAULT_PLAN"); v != "" {
-		cfg.Billing.DefaultPlan = v
-	}
 	if v := os.Getenv("NOTALK_LLM_ENABLED"); v != "" {
 		cfg.LLM.Enabled = v == "true" || v == "1"
 	}
@@ -289,7 +308,6 @@ func defaults() *Config {
 		},
 		Swagger: SwaggerConfig{Enabled: true, Path: "/api-docs"},
 		MCP:     MCPConfig{Enabled: true},
-		Billing: BillingConfig{DefaultPlan: "free"},
 	}
 }
 
