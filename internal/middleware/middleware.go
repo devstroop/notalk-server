@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/devstroop/walink/internal/config"
-	"github.com/devstroop/walink/internal/database"
+	"github.com/devstroop/notalk/internal/config"
+	"github.com/devstroop/notalk/internal/database"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -141,7 +141,7 @@ func Auth(secretKey string, db *database.DB, next http.Handler) http.Handler {
 		}
 
 		// Path 3: API key → user auth via key hash lookup
-		if strings.HasPrefix(token, "walink_") {
+		if strings.HasPrefix(token, "notalk_") {
 			hash := sha256.Sum256([]byte(token))
 			keyHash := hex.EncodeToString(hash[:])
 

@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/devstroop/walink/internal/database"
-	"github.com/devstroop/walink/internal/middleware"
-	"github.com/devstroop/walink/internal/model"
+	"github.com/devstroop/notalk/internal/database"
+	"github.com/devstroop/notalk/internal/middleware"
+	"github.com/devstroop/notalk/internal/model"
 	"github.com/google/uuid"
 )
 
@@ -104,14 +104,14 @@ func (h *APIKeyHandler) CreateAPIKey(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Generate random API key: walink_ + 32 random bytes hex = 71 chars
+	// Generate random API key: notalk_ + 32 random bytes hex = 71 chars
 	rawBytes := make([]byte, 32)
 	if _, err := rand.Read(rawBytes); err != nil {
 		writeJSON(w, http.StatusInternalServerError, model.ErrorResponse{Error: "failed to generate key"})
 		return
 	}
-	plainKey := "walink_" + hex.EncodeToString(rawBytes)
-	prefix := plainKey[:15] // "walink_" + first 8 hex chars
+	plainKey := "notalk_" + hex.EncodeToString(rawBytes)
+	prefix := plainKey[:15] // "notalk_" + first 8 hex chars
 
 	hash := sha256.Sum256([]byte(plainKey))
 	keyHash := hex.EncodeToString(hash[:])

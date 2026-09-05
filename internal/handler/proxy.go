@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/devstroop/walink/internal/model"
-	"github.com/devstroop/walink/internal/service"
+	"github.com/devstroop/notalk/internal/model"
+	"github.com/devstroop/notalk/internal/service"
 )
 
 // GetProxy — GET /api/v1/accounts/{account_id}/proxy

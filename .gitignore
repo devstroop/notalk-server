@@ -1,6 +1,6 @@
 # Binaries
-/walink
-/walink.exe
+/notalk
+/notalk.exe
 *.exe
 
 # Go build

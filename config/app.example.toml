@@ -11,7 +11,7 @@ registration_enabled = false  # Set to true to allow public user registration
 # port = 587
 # username = ""
 # password = ""
-# from = "WaLink <noreply@example.com>"
+# from = "NoTalk <noreply@example.com>"
 # tls = false       # Use implicit TLS (port 465)
 # starttls = true   # Use STARTTLS (port 587)
 
@@ -21,12 +21,12 @@ level = "info"
 [llm]
 # enabled = true
 # provider = "openai"       # "openai" or "ollama"
-# api_key = "sk-..."       # required for OpenAI; leave blank for Ollama  (use WALINK_LLM_API_KEY env var in production)
+# api_key = "sk-..."       # required for OpenAI; leave blank for Ollama  (use NOTALK_LLM_API_KEY env var in production)
 # base_url = ""            # override API endpoint; blank = provider default
 # model = "gpt-4o-mini"   # default model used by Copilot and Autopilot
 
 [database]
-# dsn = "postgres://localhost:5432/walink?sslmode=disable"  # PostgreSQL connection string
+# dsn = "postgres://localhost:5432/notalk?sslmode=disable"  # PostgreSQL connection string
 
 [cors]
 allow_origins = ["*"]
@@ -39,7 +39,7 @@ request_timeout_ms = 30000
 max_upload_size = 10485760  # 10MB
 
 [accounts]
-# base_directory = ""  # Default: ~/.walink/accounts
+# base_directory = ""  # Default: ~/.notalk/accounts
 
 [accounts.defaults]
 idle_timeout = 300  # seconds (0 = never auto-disconnect)

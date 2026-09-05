@@ -3,9 +3,9 @@ package handler
 import (
 	"net/http"
 
-	"github.com/devstroop/walink/internal/database"
-	"github.com/devstroop/walink/internal/middleware"
-	"github.com/devstroop/walink/internal/service"
+	"github.com/devstroop/notalk/internal/database"
+	"github.com/devstroop/notalk/internal/middleware"
+	"github.com/devstroop/notalk/internal/service"
 )
 
 // API groups all route handlers.

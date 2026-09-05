@@ -9,14 +9,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/devstroop/walink/internal/config"
-	"github.com/devstroop/walink/internal/database"
-	"github.com/devstroop/walink/internal/handler"
-	"github.com/devstroop/walink/internal/mcpserver"
-	"github.com/devstroop/walink/internal/middleware"
-	"github.com/devstroop/walink/internal/service"
-	smtpclient "github.com/devstroop/walink/internal/smtp"
-	"github.com/devstroop/walink/internal/web"
+	"github.com/devstroop/notalk/internal/config"
+	"github.com/devstroop/notalk/internal/database"
+	"github.com/devstroop/notalk/internal/handler"
+	"github.com/devstroop/notalk/internal/mcpserver"
+	"github.com/devstroop/notalk/internal/middleware"
+	"github.com/devstroop/notalk/internal/service"
+	smtpclient "github.com/devstroop/notalk/internal/smtp"
 	"github.com/lib/pq"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -42,24 +41,24 @@ func main() {
 	// Setup logging
 	setupLogging(cfg.Logging.Level)
 
-	log.Info().Str("version", version).Msg("starting WaLink")
+	log.Info().Str("version", version).Msg("starting NoTalk")
 
 	// Set the device identity shown in WhatsApp's "Linked Devices" on the phone.
 	// Protocol only has os + platformType — no free-text device name field.
 	// Browser types (CHROME) auto-label without prompting; DESKTOP always prompts.
-	// Result: phone shows "Chrome (WaLink)" with no naming dialog.
-	store.DeviceProps.Os = proto.String("WaLink")
+	// Result: phone shows "Chrome (NoTalk)" with no naming dialog.
+	store.DeviceProps.Os = proto.String("NoTalk")
 	store.DeviceProps.PlatformType = waCompanionReg.DeviceProps_CHROME.Enum()
 	// Send push name in the handshake payload itself (fastest possible propagation).
-	store.BaseClientPayload.PushName = proto.String("WaLink")
+	store.BaseClientPayload.PushName = proto.String("NoTalk")
 
 	// Set whatsmeow PostgreSQL array wrapper for session stores
 	sqlstore.PostgresArrayWrapper = pq.Array
 
 	if cfg.Auth.EffectiveJWTSecret() == "" || cfg.Auth.EffectiveJWTSecret() == "changeme" || cfg.Auth.EffectiveJWTSecret() == "change-this-secret-key-in-production" || cfg.Auth.EffectiveAdminSecret() == "" || cfg.Auth.EffectiveAdminSecret() == "changeme" || cfg.Auth.EffectiveAdminSecret() == "change-this-secret-key-in-production" {
-		log.Warn().Msg("using default auth secret key — set WALINK_JWT_SECRET and WALINK_ADMIN_SECRET for production (WALINK_AUTH_SECRET_KEY fallback is deprecated)")
+		log.Warn().Msg("using default auth secret key — set NOTALK_JWT_SECRET and NOTALK_ADMIN_SECRET for production (NOTALK_AUTH_SECRET_KEY fallback is deprecated)")
 	} else if cfg.Auth.UsesLegacySecret() {
-		log.Warn().Msg("using WALINK_AUTH_SECRET_KEY fallback — set WALINK_JWT_SECRET and WALINK_ADMIN_SECRET to silence and to split JWT/admin boundaries")
+		log.Warn().Msg("using NOTALK_AUTH_SECRET_KEY fallback — set NOTALK_JWT_SECRET and NOTALK_ADMIN_SECRET to silence and to split JWT/admin boundaries")
 	}
 
 	// Open database
@@ -149,15 +148,6 @@ func main() {
 		mux.Handle(swaggerPath+"/", handler.SwaggerUI(swaggerPath))
 		mux.Handle(swaggerPath, handler.SwaggerUI(swaggerPath))
 		log.Info().Str("path", swaggerPath).Msg("swagger UI enabled")
-	}
-
-	// Web UI (embedded HTMX dashboard)
-	if cfg.Web.Enabled {
-		webUI := web.New(mgr, db, cfg.Auth.SecretKey, version, cfg.Auth.RegistrationEnabled, mailer, cfg.LLM)
-		webUI.RegisterRoutes(mux)
-		// Wire autopilot auto-reply hook.
-		webUI.InitAutoReply()
-		log.Info().Msg("web UI enabled at /")
 	}
 
 	// Wrap everything with CORS

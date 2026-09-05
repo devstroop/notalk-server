@@ -14,22 +14,22 @@ RUN if [ ! -f whatsmeow/go.mod ]; then \
     git clone --depth 1 https://github.com/tulir/whatsmeow.git whatsmeow; \
     fi
 
-RUN CGO_ENABLED=0 GOTOOLCHAIN=auto go build -trimpath -o /bin/walink ./cmd/walink
+RUN CGO_ENABLED=0 GOTOOLCHAIN=auto go build -trimpath -o /bin/notalk ./cmd/notalk
 
 # --- Runtime stage ---
 FROM alpine:3.21
 
 RUN apk add --no-cache ca-certificates tzdata \
-    && addgroup -S walink && adduser -S walink -G walink
+    && addgroup -S notalk && adduser -S notalk -G notalk
 
-COPY --from=builder /bin/walink /usr/local/bin/walink
+COPY --from=builder /bin/notalk /usr/local/bin/notalk
 
 # Default data directory
-RUN mkdir -p /data/db /data/accounts && chown -R walink:walink /data
+RUN mkdir -p /data/db /data/accounts && chown -R notalk:notalk /data
 
-USER walink
-WORKDIR /home/walink
+USER notalk
+WORKDIR /home/notalk
 
 EXPOSE 3000
 
-ENTRYPOINT ["walink"]
+ENTRYPOINT ["notalk"]

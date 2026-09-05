@@ -1,0 +1,10 @@
+# GitGuardian config - ignore default passwords in docker-compose for local dev/CI
+# These are not real secrets, just default values for postgres in dev/CI.
+paths-ignore:
+  - "docker-compose.yml"
+
+# Alternatively, ignore specific detectors if needed
+# secret:
+#   ignore:
+#     - detector: generic_password
+#       file: docker-compose.yml

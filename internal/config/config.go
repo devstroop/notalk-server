@@ -22,7 +22,6 @@ type Config struct {
 	Accounts AccountsConfig `toml:"accounts"`
 	Webhooks WebhookConfig  `toml:"webhooks"`
 	Swagger  SwaggerConfig  `toml:"swagger"`
-	Web      WebConfig       `toml:"web"`
 	MCP      MCPConfig       `toml:"mcp"`
 	LLM      LLMConfig       `toml:"llm"`
 }
@@ -39,8 +38,8 @@ type AuthConfig struct {
 	RegistrationEnabled bool   `toml:"registration_enabled"`
 }
 
-// EffectiveJWTSecret returns the JWT HMAC secret, preferring WALINK_JWT_SECRET
-// with fallback to WALINK_AUTH_SECRET_KEY for compat.
+// EffectiveJWTSecret returns the JWT HMAC secret, preferring NOTALK_JWT_SECRET
+// with fallback to NOTALK_AUTH_SECRET_KEY for compat.
 func (a AuthConfig) EffectiveJWTSecret() string {
 	if a.JWTSecret != "" {
 		return a.JWTSecret
@@ -49,7 +48,7 @@ func (a AuthConfig) EffectiveJWTSecret() string {
 }
 
 // EffectiveAdminSecret returns the static admin bearer secret, preferring
-// WALINK_ADMIN_SECRET with fallback to WALINK_AUTH_SECRET_KEY.
+// NOTALK_ADMIN_SECRET with fallback to NOTALK_AUTH_SECRET_KEY.
 func (a AuthConfig) EffectiveAdminSecret() string {
 	if a.AdminSecret != "" {
 		return a.AdminSecret
@@ -57,7 +56,7 @@ func (a AuthConfig) EffectiveAdminSecret() string {
 	return a.SecretKey
 }
 
-// UsesLegacySecret reports whether WALINK_AUTH_SECRET_KEY fallback is in use
+// UsesLegacySecret reports whether NOTALK_AUTH_SECRET_KEY fallback is in use
 // for either JWT or admin auth (caller should log a startup warning).
 func (a AuthConfig) UsesLegacySecret() bool {
 	return (a.JWTSecret == "" && a.SecretKey != "") || (a.AdminSecret == "" && a.SecretKey != "")
@@ -68,7 +67,7 @@ type SMTPConfig struct {
 	Port     int    `toml:"port"`
 	Username string `toml:"username"`
 	Password string `toml:"password"`
-	From     string `toml:"from"`     // sender address e.g. "WaLink <noreply@example.com>"
+	From     string `toml:"from"`     // sender address e.g. "NoTalk <noreply@example.com>"
 	TLS      bool   `toml:"tls"`      // use implicit TLS (port 465)
 	StartTLS bool   `toml:"starttls"` // use STARTTLS (port 587)
 }
@@ -109,10 +108,6 @@ type SwaggerConfig struct {
 	Path    string `toml:"path"`
 }
 
-type WebConfig struct {
-	Enabled bool `toml:"enabled"`
-}
-
 type MCPConfig struct {
 	Enabled bool `toml:"enabled"`
 }
@@ -133,7 +128,7 @@ func Load() (*Config, error) {
 	// Search paths for config
 	paths := []string{
 		"config/app.toml",
-		filepath.Join(homeDir(), ".walink", "config.toml"),
+		filepath.Join(homeDir(), ".notalk", "config.toml"),
 	}
 
 	for _, p := range paths {
@@ -150,34 +145,34 @@ func Load() (*Config, error) {
 
 	// Resolve database DSN
 	if cfg.Database.DSN == "" {
-		cfg.Database.DSN = "postgres://localhost:5432/walink?sslmode=disable"
+		cfg.Database.DSN = "postgres://localhost:5432/notalk?sslmode=disable"
 	}
 
 	// Resolve accounts base directory
 	if cfg.Accounts.BaseDirectory == "" {
-		cfg.Accounts.BaseDirectory = filepath.Join(homeDir(), ".walink", "accounts")
+		cfg.Accounts.BaseDirectory = filepath.Join(homeDir(), ".notalk", "accounts")
 	}
 
 	return cfg, nil
 }
 
-// applyEnvOverrides overrides config values with WALINK_* environment variables.
+// applyEnvOverrides overrides config values with NOTALK_* environment variables.
 func applyEnvOverrides(cfg *Config) {
-	if v := os.Getenv("WALINK_SERVER_HOST"); v != "" {
+	if v := os.Getenv("NOTALK_SERVER_HOST"); v != "" {
 		cfg.Server.Host = v
 	}
-	if v := os.Getenv("WALINK_SERVER_PORT"); v != "" {
+	if v := os.Getenv("NOTALK_SERVER_PORT"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil {
 			cfg.Server.Port = n
 		}
 	}
-	if v := os.Getenv("WALINK_JWT_SECRET"); v != "" {
+	if v := os.Getenv("NOTALK_JWT_SECRET"); v != "" {
 		cfg.Auth.JWTSecret = v
 	}
-	if v := os.Getenv("WALINK_ADMIN_SECRET"); v != "" {
+	if v := os.Getenv("NOTALK_ADMIN_SECRET"); v != "" {
 		cfg.Auth.AdminSecret = v
 	}
-	if v := os.Getenv("WALINK_AUTH_SECRET_KEY"); v != "" {
+	if v := os.Getenv("NOTALK_AUTH_SECRET_KEY"); v != "" {
 		cfg.Auth.SecretKey = v
 		// Backfill split secrets for compat if explicit split not set
 		if cfg.Auth.JWTSecret == "" {
@@ -187,102 +182,99 @@ func applyEnvOverrides(cfg *Config) {
 			cfg.Auth.AdminSecret = v
 		}
 	}
-	if v := os.Getenv("WALINK_LOG_LEVEL"); v != "" {
+	if v := os.Getenv("NOTALK_LOG_LEVEL"); v != "" {
 		cfg.Logging.Level = v
 	}
-	if v := os.Getenv("WALINK_DATABASE_DSN"); v != "" {
+	if v := os.Getenv("NOTALK_DATABASE_DSN"); v != "" {
 		cfg.Database.DSN = v
 	}
-	if v := os.Getenv("WALINK_CORS_ORIGINS"); v != "" {
+	if v := os.Getenv("NOTALK_CORS_ORIGINS"); v != "" {
 		cfg.CORS.AllowOrigins = strings.Split(v, ",")
 	}
-	if v := os.Getenv("WALINK_LIMITS_MAX_CONCURRENT"); v != "" {
+	if v := os.Getenv("NOTALK_LIMITS_MAX_CONCURRENT"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil {
 			cfg.Limits.MaxConcurrentRequests = n
 		}
 	}
-	if v := os.Getenv("WALINK_LIMITS_TIMEOUT_MS"); v != "" {
+	if v := os.Getenv("NOTALK_LIMITS_TIMEOUT_MS"); v != "" {
 		if n, err := strconv.ParseInt(v, 10, 64); err == nil {
 			cfg.Limits.RequestTimeoutMs = n
 		}
 	}
-	if v := os.Getenv("WALINK_LIMITS_MAX_UPLOAD"); v != "" {
+	if v := os.Getenv("NOTALK_LIMITS_MAX_UPLOAD"); v != "" {
 		if n, err := strconv.ParseInt(v, 10, 64); err == nil {
 			cfg.Limits.MaxUploadSize = n
 		}
 	}
-	if v := os.Getenv("WALINK_ACCOUNTS_DIR"); v != "" {
+	if v := os.Getenv("NOTALK_ACCOUNTS_DIR"); v != "" {
 		cfg.Accounts.BaseDirectory = v
 	}
-	if v := os.Getenv("WALINK_WEBHOOKS_ENABLED"); v != "" {
+	if v := os.Getenv("NOTALK_WEBHOOKS_ENABLED"); v != "" {
 		cfg.Webhooks.Enabled = v == "true" || v == "1"
 	}
-	if v := os.Getenv("WALINK_WEBHOOKS_TIMEOUT_MS"); v != "" {
+	if v := os.Getenv("NOTALK_WEBHOOKS_TIMEOUT_MS"); v != "" {
 		if n, err := strconv.ParseInt(v, 10, 64); err == nil {
 			cfg.Webhooks.TimeoutMs = n
 		}
 	}
-	if v := os.Getenv("WALINK_WEBHOOKS_RETRY_COUNT"); v != "" {
+	if v := os.Getenv("NOTALK_WEBHOOKS_RETRY_COUNT"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil {
 			cfg.Webhooks.RetryCount = n
 		}
 	}
-	if v := os.Getenv("WALINK_WEBHOOKS_RETRY_DELAY_MS"); v != "" {
+	if v := os.Getenv("NOTALK_WEBHOOKS_RETRY_DELAY_MS"); v != "" {
 		if n, err := strconv.ParseInt(v, 10, 64); err == nil {
 			cfg.Webhooks.RetryDelay = n
 		}
 	}
-	if v := os.Getenv("WALINK_AUTH_REGISTRATION_ENABLED"); v != "" {
+	if v := os.Getenv("NOTALK_AUTH_REGISTRATION_ENABLED"); v != "" {
 		cfg.Auth.RegistrationEnabled = v == "true" || v == "1"
 	}
-	if v := os.Getenv("WALINK_SMTP_HOST"); v != "" {
+	if v := os.Getenv("NOTALK_SMTP_HOST"); v != "" {
 		cfg.SMTP.Host = v
 	}
-	if v := os.Getenv("WALINK_SMTP_PORT"); v != "" {
+	if v := os.Getenv("NOTALK_SMTP_PORT"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil {
 			cfg.SMTP.Port = n
 		}
 	}
-	if v := os.Getenv("WALINK_SMTP_USERNAME"); v != "" {
+	if v := os.Getenv("NOTALK_SMTP_USERNAME"); v != "" {
 		cfg.SMTP.Username = v
 	}
-	if v := os.Getenv("WALINK_SMTP_PASSWORD"); v != "" {
+	if v := os.Getenv("NOTALK_SMTP_PASSWORD"); v != "" {
 		cfg.SMTP.Password = v
 	}
-	if v := os.Getenv("WALINK_SMTP_FROM"); v != "" {
+	if v := os.Getenv("NOTALK_SMTP_FROM"); v != "" {
 		cfg.SMTP.From = v
 	}
-	if v := os.Getenv("WALINK_SMTP_TLS"); v != "" {
+	if v := os.Getenv("NOTALK_SMTP_TLS"); v != "" {
 		cfg.SMTP.TLS = v == "true" || v == "1"
 	}
-	if v := os.Getenv("WALINK_SMTP_STARTTLS"); v != "" {
+	if v := os.Getenv("NOTALK_SMTP_STARTTLS"); v != "" {
 		cfg.SMTP.StartTLS = v == "true" || v == "1"
 	}
-	if v := os.Getenv("WALINK_SWAGGER_ENABLED"); v != "" {
+	if v := os.Getenv("NOTALK_SWAGGER_ENABLED"); v != "" {
 		cfg.Swagger.Enabled = v == "true" || v == "1"
 	}
-	if v := os.Getenv("WALINK_SWAGGER_PATH"); v != "" {
+	if v := os.Getenv("NOTALK_SWAGGER_PATH"); v != "" {
 		cfg.Swagger.Path = v
 	}
-	if v := os.Getenv("WALINK_WEB_ENABLED"); v != "" {
-		cfg.Web.Enabled = v == "true" || v == "1"
-	}
-	if v := os.Getenv("WALINK_MCP_ENABLED"); v != "" {
+	if v := os.Getenv("NOTALK_MCP_ENABLED"); v != "" {
 		cfg.MCP.Enabled = v == "true" || v == "1"
 	}
-	if v := os.Getenv("WALINK_LLM_ENABLED"); v != "" {
+	if v := os.Getenv("NOTALK_LLM_ENABLED"); v != "" {
 		cfg.LLM.Enabled = v == "true" || v == "1"
 	}
-	if v := os.Getenv("WALINK_LLM_PROVIDER"); v != "" {
+	if v := os.Getenv("NOTALK_LLM_PROVIDER"); v != "" {
 		cfg.LLM.Provider = v
 	}
-	if v := os.Getenv("WALINK_LLM_API_KEY"); v != "" {
+	if v := os.Getenv("NOTALK_LLM_API_KEY"); v != "" {
 		cfg.LLM.APIKey = v
 	}
-	if v := os.Getenv("WALINK_LLM_BASE_URL"); v != "" {
+	if v := os.Getenv("NOTALK_LLM_BASE_URL"); v != "" {
 		cfg.LLM.BaseURL = v
 	}
-	if v := os.Getenv("WALINK_LLM_MODEL"); v != "" {
+	if v := os.Getenv("NOTALK_LLM_MODEL"); v != "" {
 		cfg.LLM.Model = v
 	}
 
@@ -315,7 +307,6 @@ func defaults() *Config {
 			RetryDelay: 1000,
 		},
 		Swagger: SwaggerConfig{Enabled: true, Path: "/api-docs"},
-		Web:     WebConfig{Enabled: true},
 		MCP:     MCPConfig{Enabled: true},
 	}
 }

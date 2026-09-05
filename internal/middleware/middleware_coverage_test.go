@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/devstroop/walink/internal/database"
+	"github.com/devstroop/notalk/internal/database"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
@@ -16,7 +16,7 @@ import (
 
 func cleanDB(t *testing.T) {
 	t.Helper()
-	dsn := os.Getenv("WALINK_TEST_DSN")
+	dsn := os.Getenv("NOTALK_TEST_DSN")
 	if dsn == "" {
 		return
 	}
@@ -157,9 +157,9 @@ func TestRateLimit(t *testing.T) {
 
 func TestAuthJWTAndAPIKey(t *testing.T) {
 	cleanDB(t)
-	dsn := os.Getenv("WALINK_TEST_DSN")
+	dsn := os.Getenv("NOTALK_TEST_DSN")
 	if dsn == "" {
-		t.Skip("WALINK_TEST_DSN not set")
+		t.Skip("NOTALK_TEST_DSN not set")
 	}
 	db, _ := database.Open(dsn)
 	defer func() { _ = db.Close() }()
@@ -218,9 +218,9 @@ func TestAuthJWTAndAPIKey(t *testing.T) {
 
 func TestMCPScope(t *testing.T) {
 	cleanDB(t)
-	dsn := os.Getenv("WALINK_TEST_DSN")
+	dsn := os.Getenv("NOTALK_TEST_DSN")
 	if dsn == "" {
-		t.Skip("WALINK_TEST_DSN not set")
+		t.Skip("NOTALK_TEST_DSN not set")
 	}
 	db, _ := database.Open(dsn)
 	defer func() { _ = db.Close() }()

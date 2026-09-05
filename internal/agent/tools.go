@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/devstroop/walink/internal/service"
+	"github.com/devstroop/notalk/internal/service"
 )
 
 // jsonParam builds an OpenAI-compatible JSON Schema parameter object.
@@ -237,7 +237,7 @@ func (tr *ToolRegistry) getAccount(accountID string) (*service.Account, error) {
 			return nil, fmt.Errorf("access denied")
 		}
 	}
-	// Auto-connect sleeping accounts (core WaLink behaviour).
+	// Auto-connect sleeping accounts (core NoTalk behaviour).
 	if err := acct.EnsureConnected(context.Background()); err != nil {
 		return nil, fmt.Errorf("failed to connect account %s: %w", accountID, err)
 	}

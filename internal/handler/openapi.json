@@ -1,15 +1,15 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "WaLink – WhatsApp HTTP API",
+    "title": "NoTalk Server",
     "version": "0.1.0",
-    "description": "Multi-account WhatsApp HTTP API."
+    "description": "NoTalk Server"
   },
   "servers": [{ "url": "/" }],
   "security": [{ "BearerAuth": [] }],
   "components": {
     "securitySchemes": {
-      "BearerAuth": { "type": "http", "scheme": "bearer", "description": "Use secret_key or a JWT token from /api/v1/auth/login, or an API key (walink_...)" }
+      "BearerAuth": { "type": "http", "scheme": "bearer", "description": "Use secret_key or a JWT token from /api/v1/auth/login, or an API key (notalk_...)" }
     },
     "parameters": {
       "AccountId": { "name": "account_id", "in": "path", "required": true, "schema": { "type": "string" } },
@@ -115,7 +115,7 @@
         "properties": {
           "chat": { "type": "string", "example": "919876543210@s.whatsapp.net", "description": "Recipient JID (alternative to phone)" },
           "phone": { "type": "string", "example": "919876543210", "description": "Phone number, digits only (alternative to chat)" },
-          "text": { "type": "string", "example": "Hello from WaLink!" },
+          "text": { "type": "string", "example": "Hello from NoTalk!" },
           "reply_to": { "type": "string", "description": "Message ID to reply to (optional)" }
         }
       },

@@ -11,8 +11,8 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/devstroop/walink/internal/database"
-	"github.com/devstroop/walink/internal/service"
+	"github.com/devstroop/notalk/internal/database"
+	"github.com/devstroop/notalk/internal/service"
 )
 
 const (

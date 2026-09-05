@@ -94,6 +94,8 @@ jobs:
     needs: [test, lint]
     permissions:
       contents: read
+    env:
+      POSTGRES_PASSWORD: notalk
     steps:
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
@@ -109,7 +111,7 @@ jobs:
 
       - name: Start services
         run: |
-          docker compose up -d || (echo "=== compose ps ==="; docker compose ps -a; echo "=== postgres logs ==="; docker compose logs postgres; echo "=== walink logs ==="; docker compose logs walink; exit 1)
+          docker compose up -d || (echo "=== compose ps ==="; docker compose ps -a; echo "=== postgres logs ==="; docker compose logs postgres; echo "=== notalk logs ==="; docker compose logs notalk; exit 1)
 
       - name: Wait for healthy
         run: |

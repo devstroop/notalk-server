@@ -20,11 +20,11 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/devstroop/walink/internal/config"
-	"github.com/devstroop/walink/internal/database"
-	"github.com/devstroop/walink/internal/handler"
-	"github.com/devstroop/walink/internal/middleware"
-	"github.com/devstroop/walink/internal/service"
+	"github.com/devstroop/notalk/internal/config"
+	"github.com/devstroop/notalk/internal/database"
+	"github.com/devstroop/notalk/internal/handler"
+	"github.com/devstroop/notalk/internal/middleware"
+	"github.com/devstroop/notalk/internal/service"
 	_ "github.com/lib/pq"
 )
 
@@ -41,9 +41,9 @@ func testServer(t *testing.T) (*httptest.Server, *service.AccountManager) {
 // tests can verify DB state directly (e.g. RBAC / API key tests).
 func testServerWithDB(t *testing.T) (*httptest.Server, *service.AccountManager, *database.DB) {
 	t.Helper()
-	dsn := os.Getenv("WALINK_TEST_DSN")
+	dsn := os.Getenv("NOTALK_TEST_DSN")
 	if dsn == "" {
-		t.Skip("WALINK_TEST_DSN not set, skipping integration tests")
+		t.Skip("NOTALK_TEST_DSN not set, skipping integration tests")
 	}
 	dir := t.TempDir()
 
@@ -874,9 +874,9 @@ func TestSendEndpointTextInBody(t *testing.T) {
 // ─── Rate Limiting ──────────────────────────────────
 
 func TestRateLimitEnforced(t *testing.T) {
-	dsn := os.Getenv("WALINK_TEST_DSN")
+	dsn := os.Getenv("NOTALK_TEST_DSN")
 	if dsn == "" {
-		t.Skip("WALINK_TEST_DSN not set, skipping integration tests")
+		t.Skip("NOTALK_TEST_DSN not set, skipping integration tests")
 	}
 	dir := t.TempDir()
 	db, err := database.Open(dsn)

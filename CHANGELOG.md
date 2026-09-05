@@ -26,7 +26,7 @@
 - **Password reset** — SMTP-based forgot-password flow
 - **Pricing page** — public billing plans page
 - **Docker support** — multi-stage Dockerfile and docker-compose with environment variable config
-- **API keys** — create scoped API keys with expiry and account binding (`walink_` prefix)
+- **API keys** — create scoped API keys with expiry and account binding (`notalk_` prefix)
 - **MCP runtime toggle** — enable/disable MCP at runtime via admin UI or API
 - **Media type detection** — sends images, videos, audio, stickers with proper WhatsApp message types
 - **Per-account rate limiting** — token bucket (30 msg/min) for send operations
