@@ -167,8 +167,8 @@ func TestEnvOverridesInvalidIntsIgnored(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Load() error: %v", err)
 	}
-	if cfg.Server.Port != 3000 {
-		t.Errorf("expected default port 3000 got %d", cfg.Server.Port)
+	if cfg.Server.Port != 5000 {
+		t.Errorf("expected default port 5000 got %d", cfg.Server.Port)
 	}
 	if cfg.Limits.MaxConcurrentRequests != 50 {
 		t.Errorf("expected 50 got %d", cfg.Limits.MaxConcurrentRequests)

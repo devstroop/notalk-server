@@ -35,8 +35,8 @@ go build -trimpath -o /tmp/notalk ./cmd/notalk && \
 
 ```bash
 # Docker (PostgreSQL + NoTalk)
-docker compose up -d          # → http://localhost:3000
-curl -sf http://localhost:3000/api/health  # {"status":"ok"}
+docker compose up -d          # → http://localhost:5000
+curl -sf http://localhost:5000/api/health  # {"status":"ok"}
 docker compose logs -f
 ```
 
@@ -52,15 +52,15 @@ Three calls to send a message:
 AUTH="Authorization: Bearer <secret_key>"
 
 # 1. create account
-curl -X POST http://localhost:3000/api/v1/accounts \
+curl -X POST http://localhost:5000/api/v1/accounts \
   -H "$AUTH" -H "Content-Type: application/json" \
   -d '{"phone_number":"+919876543210","account_name":"main"}' # → {id}
 
 # 2. link (QR)
-curl http://localhost:3000/api/v1/accounts/{id}/session/qr -H "$AUTH" -o qr.png
+curl http://localhost:5000/api/v1/accounts/{id}/session/qr -H "$AUTH" -o qr.png
 
 # 3. send
-curl -X POST "http://localhost:3000/api/v1/accounts/{id}/messages?phone=919876543210&text=Hello!" -H "$AUTH"
+curl -X POST "http://localhost:5000/api/v1/accounts/{id}/messages?phone=919876543210&text=Hello!" -H "$AUTH"
 ```
 
 ## Authentication
@@ -79,7 +79,7 @@ All `/api/v1/*` require `Authorization: Bearer <token>`.
 
 ## REST API
 
-Base: `http://localhost:3000/api/v1/accounts/{id}` (`{id}` = account UUID). All phone-accepting endpoints also accept `phone` → JID resolved via WhatsApp.
+Base: `http://localhost:5000/api/v1/accounts/{id}` (`{id}` = account UUID). All phone-accepting endpoints also accept `phone` → JID resolved via WhatsApp.
 
 **Accounts**
 
@@ -174,11 +174,11 @@ Webhook payload: `event_type`, `account_id`, `timestamp`, `payload` + `X-Webhook
 **Admin (requires `*`):** `GET/POST /api/v1/users`, `GET/PATCH/DELETE /api/v1/users/{id}`, `GET/POST /api/v1/roles`, `GET/PATCH/DELETE /api/v1/roles/{id}`, `GET/POST/DELETE /api/v1/api-keys`
 
 
-Full interactive docs: `http://localhost:3000/api-docs` (Swagger, `internal/handler/openapi.json`).
+Full interactive docs: `http://localhost:5000/api-docs` (Swagger, `internal/handler/openapi.json`).
 
 ## MCP Server
 
-Fixed endpoint `http://localhost:3000/mcp` (Streamable HTTP, stateful SSE, `10m` idle TTL). Auth: `Authorization: Bearer <secret_key>` or `Bearer notalk_…` (account-scoped keys auto-bind `account_id`).
+Fixed endpoint `http://localhost:5000/mcp` (Streamable HTTP, stateful SSE, `10m` idle TTL). Auth: `Authorization: Bearer <secret_key>` or `Bearer notalk_…` (account-scoped keys auto-bind `account_id`).
 
 **VS Code / Copilot** `.vscode/mcp.json`:
 
@@ -187,7 +187,7 @@ Fixed endpoint `http://localhost:3000/mcp` (Streamable HTTP, stateful SSE, `10m`
   "servers": {
     "notalk": {
       "type": "http",
-      "url": "http://localhost:3000/mcp",
+      "url": "http://localhost:5000/mcp",
       "headers": { "Authorization": "Bearer <secret_key>" }
     }
   }
@@ -204,31 +204,31 @@ Toggle at runtime: `PATCH /api/v1/mcp {"enabled":false}` or Admin → MCP Server
 AUTH="Authorization: Bearer change-this-secret-key-in-production"
 
 # Accounts
-curl -X POST http://localhost:3000/api/v1/accounts -H "$AUTH" -H "Content-Type: application/json" \
+curl -X POST http://localhost:5000/api/v1/accounts -H "$AUTH" -H "Content-Type: application/json" \
   -d '{"phone_number":"+919876543210","account_name":"main"}'
 
 # QR / Pair
-curl http://localhost:3000/api/v1/accounts/{id}/session/qr -H "$AUTH" -o qr.png
-curl -X POST http://localhost:3000/api/v1/accounts/{id}/session/pair -H "$AUTH" -d '{"phone":"919876543210"}'
+curl http://localhost:5000/api/v1/accounts/{id}/session/qr -H "$AUTH" -o qr.png
+curl -X POST http://localhost:5000/api/v1/accounts/{id}/session/pair -H "$AUTH" -d '{"phone":"919876543210"}'
 
 # Send (phone) + media
-curl -X POST "http://localhost:3000/api/v1/accounts/{id}/messages?phone=919876543210&text=Hello!" -H "$AUTH"
-curl -X POST "http://localhost:3000/api/v1/accounts/{id}/messages?phone=919876543210" -H "$AUTH" -F "text=caption" -F "file=@photo.jpg"
+curl -X POST "http://localhost:5000/api/v1/accounts/{id}/messages?phone=919876543210&text=Hello!" -H "$AUTH"
+curl -X POST "http://localhost:5000/api/v1/accounts/{id}/messages?phone=919876543210" -H "$AUTH" -F "text=caption" -F "file=@photo.jpg"
 
 # Read / React
-curl -X POST http://localhost:3000/api/v1/accounts/{id}/messages/mark-read -H "$AUTH" -H "Content-Type: application/json" \
+curl -X POST http://localhost:5000/api/v1/accounts/{id}/messages/mark-read -H "$AUTH" -H "Content-Type: application/json" \
   -d '{"phone":"919876543210","message_ids":["ABCD"]}'
-curl -X POST http://localhost:3000/api/v1/accounts/{id}/messages/reactions -H "$AUTH" -H "Content-Type: application/json" \
+curl -X POST http://localhost:5000/api/v1/accounts/{id}/messages/reactions -H "$AUTH" -H "Content-Type: application/json" \
   -d '{"phone":"919876543210","message_id":"ABCD","emoji":"👍"}'
 
 # Groups / Webhook / Auth
-curl -X POST http://localhost:3000/api/v1/accounts/{id}/groups -H "$AUTH" -H "Content-Type: application/json" \
+curl -X POST http://localhost:5000/api/v1/accounts/{id}/groups -H "$AUTH" -H "Content-Type: application/json" \
   -d '{"name":"Team","participants":["919876543210"]}'
-curl -X PUT http://localhost:3000/api/v1/accounts/{id}/webhook -H "$AUTH" -H "Content-Type: application/json" \
+curl -X PUT http://localhost:5000/api/v1/accounts/{id}/webhook -H "$AUTH" -H "Content-Type: application/json" \
   -d '{"url":"https://example.com/hook","secret":"s","events":["message","receipt"]}'
-curl -X POST http://localhost:3000/api/v1/auth/login -H "Content-Type: application/json" \
+curl -X POST http://localhost:5000/api/v1/auth/login -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"secret"}' # → JWT
-curl -X POST http://localhost:3000/api/v1/api-keys -H "$AUTH" -H "Content-Type: application/json" \
+curl -X POST http://localhost:5000/api/v1/api-keys -H "$AUTH" -H "Content-Type: application/json" \
   -d '{"name":"bot","account_id":"{id}"}' # → notalk_…
 ```
 
@@ -255,7 +255,7 @@ curl -X POST http://localhost:3000/api/v1/api-keys -H "$AUTH" -H "Content-Type: 
 
 | Section | Key | Default | Description |
 |---------|-----|---------|-------------|
-| `server` | `host` / `port` | `0.0.0.0` / `3000` | HTTP listen |
+| `server` | `host` / `port` | `0.0.0.0` / `5000` | HTTP listen |
 | `auth` | `secret_key` | — | Bearer + JWT signing (required) |
 | `auth` | `registration_enabled` | `false` | Public `POST /auth/register` |
 | `smtp` | `host`/`port`/`username`/`password`/`from`/`tls`/`starttls` | — / `587` / `true` | Password reset email |
@@ -284,7 +284,7 @@ See `docs/architecture.md` — Mermaid overview, project layout (`cmd/notalk/mai
 go vet ./...
 go test -race -count=1 -timeout 120s ./...         # unit + integration (needs NOTALK_TEST_DSN)
 golangci-lint run --timeout 5m
-docker compose config --quiet && docker compose build && docker compose up -d && curl -sf http://localhost:3000/api/health
+docker compose config --quiet && docker compose build && docker compose up -d && curl -sf http://localhost:5000/api/health
 ```
 
 CI (`.github/workflows/ci.yml`): `Test` (ubuntu/macos/windows `1.26` + `go test -race`), `Lint` (`golangci-lint`), `Docker` (build → `pg_isready` → `curl /api/health`).

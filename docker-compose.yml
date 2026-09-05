@@ -24,13 +24,13 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "${NOTALK_SERVER_PORT:-3000}:${NOTALK_SERVER_PORT:-3000}"
+      - "${NOTALK_SERVER_PORT:-5000}:${NOTALK_SERVER_PORT:-5000}"
     volumes:
       - notalk-data:/data
     environment:
       TZ: UTC
       NOTALK_SERVER_HOST: "0.0.0.0"
-      NOTALK_SERVER_PORT: "${NOTALK_SERVER_PORT:-3000}"
+      NOTALK_SERVER_PORT: "${NOTALK_SERVER_PORT:-5000}"
       NOTALK_AUTH_SECRET_KEY: "${NOTALK_AUTH_SECRET_KEY:-change-this-secret-key-in-production}"
       NOTALK_LOG_LEVEL: "${NOTALK_LOG_LEVEL:-info}"
       NOTALK_DATABASE_DSN: "postgres://notalk:${POSTGRES_PASSWORD}@postgres:5432/notalk?sslmode=disable"

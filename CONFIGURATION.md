@@ -7,7 +7,7 @@ NoTalk reads configuration from `config/app.toml` (relative to working directory
 ```toml
 [server]
 host = "0.0.0.0"       # Bind address
-port = 3000             # Listen port
+port = 5000             # Listen port
 
 [auth]
 secret_key = "..."      # Bearer token for API authentication (CHANGE THIS)
@@ -66,7 +66,7 @@ All config keys map to environment variables with the `NOTALK_` prefix. Nested k
 | Config Key | Environment Variable | Example |
 |-----------|---------------------|---------|
 | `server.host` | `NOTALK_SERVER_HOST` | `0.0.0.0` |
-| `server.port` | `NOTALK_SERVER_PORT` | `3000` |
+| `server.port` | `NOTALK_SERVER_PORT` | `5000` |
 | `auth.secret_key` | `NOTALK_AUTH_SECRET_KEY` | `my-secret` |
 | `auth.registration_enabled` | `NOTALK_AUTH_REGISTRATION_ENABLED` | `true` |
 | `logging.level` | `NOTALK_LOG_LEVEL` | `debug` |

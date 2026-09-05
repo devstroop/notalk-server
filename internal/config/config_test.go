@@ -12,8 +12,8 @@ func TestDefaults(t *testing.T) {
 	if cfg.Server.Host != "0.0.0.0" {
 		t.Errorf("expected host 0.0.0.0, got %s", cfg.Server.Host)
 	}
-	if cfg.Server.Port != 3000 {
-		t.Errorf("expected port 3000, got %d", cfg.Server.Port)
+	if cfg.Server.Port != 5000 {
+		t.Errorf("expected port 5000, got %d", cfg.Server.Port)
 	}
 	if cfg.Logging.Level != "info" {
 		t.Errorf("expected log level info, got %s", cfg.Logging.Level)
@@ -100,8 +100,8 @@ func TestLoadNoFile(t *testing.T) {
 	}
 
 	// Should get all defaults
-	if cfg.Server.Port != 3000 {
-		t.Errorf("expected default port 3000, got %d", cfg.Server.Port)
+	if cfg.Server.Port != 5000 {
+		t.Errorf("expected default port 5000, got %d", cfg.Server.Port)
 	}
 }
 

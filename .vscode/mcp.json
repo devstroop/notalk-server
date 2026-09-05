@@ -2,7 +2,7 @@
   "servers": {
     "notalk": {
       "type": "http",
-      "url": "http://192.168.1.49:3000/mcp",
+      "url": "http://192.168.1.49:5000/mcp",
       "headers": {
         "Authorization": "Bearer ${input:notalk_api_key}"
       }
