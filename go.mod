@@ -1,4 +1,4 @@
-module github.com/devstroop/walink
+module github.com/devstroop/notalk
 
 go 1.26.0
 

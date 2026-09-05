@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/devstroop/walink/internal/database"
-	"github.com/devstroop/walink/internal/model"
-	smtpclient "github.com/devstroop/walink/internal/smtp"
+	"github.com/devstroop/notalk/internal/database"
+	"github.com/devstroop/notalk/internal/model"
+	smtpclient "github.com/devstroop/notalk/internal/smtp"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
@@ -68,7 +68,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		Subject:   user.ID,
 		ExpiresAt: jwt.NewNumericDate(expiresAt),
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		Issuer:    "walink",
+		Issuer:    "notalk",
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -217,14 +217,14 @@ func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 
 	if h.smtp != nil && h.smtp.Enabled() {
 		// Send email
-		body := "You requested a password reset for your WaLink account.\n\n" +
+		body := "You requested a password reset for your NoTalk account.\n\n" +
 			"Use this link to reset your password (valid for 1 hour):\n" +
 			resetLink + "\n\n" +
 			"Or use this token directly with the API:\n" +
 			plainToken + "\n\n" +
 			"If you did not request this, ignore this email."
 
-		if err := h.smtp.Send(req.Email, "WaLink Password Reset", body); err != nil {
+		if err := h.smtp.Send(req.Email, "NoTalk Password Reset", body); err != nil {
 			writeJSON(w, http.StatusInternalServerError, model.ErrorResponse{Error: "failed to send reset email"})
 			return
 		}

@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/devstroop/walink/internal/database"
-	"github.com/devstroop/walink/internal/middleware"
-	"github.com/devstroop/walink/internal/model"
+	"github.com/devstroop/notalk/internal/database"
+	"github.com/devstroop/notalk/internal/middleware"
+	"github.com/devstroop/notalk/internal/model"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )

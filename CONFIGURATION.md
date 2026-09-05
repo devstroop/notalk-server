@@ -1,6 +1,6 @@
 # Configuration
 
-WaLink reads configuration from `config/app.toml` (relative to working directory), falling back to `~/.walink/config.toml`. Missing keys use defaults. All settings can be overridden via environment variables using the `WALINK_SECTION_KEY` format (e.g. `WALINK_SERVER_PORT=8080`).
+NoTalk reads configuration from `config/app.toml` (relative to working directory), falling back to `~/.notalk/config.toml`. Missing keys use defaults. All settings can be overridden via environment variables using the `NOTALK_SECTION_KEY` format (e.g. `NOTALK_SERVER_PORT=8080`).
 
 ## Reference
 
@@ -18,7 +18,7 @@ registration_enabled = false  # Set to true to allow public user registration
 # port = 587
 # username = ""
 # password = ""
-# from = "WaLink <noreply@example.com>"
+# from = "NoTalk <noreply@example.com>"
 # tls = false       # Use implicit TLS (port 465)
 # starttls = true   # Use STARTTLS (port 587)
 
@@ -26,7 +26,7 @@ registration_enabled = false  # Set to true to allow public user registration
 level = "info"          # trace | debug | info | warn | error
 
 [database]
-# dsn = "postgres://walink:walink@localhost:5432/walink?sslmode=disable"  # PostgreSQL DSN
+# dsn = "postgres://notalk:notalk@localhost:5432/notalk?sslmode=disable"  # PostgreSQL DSN
 
 [cors]
 allow_origins = ["*"]
@@ -39,7 +39,7 @@ request_timeout_ms = 30000
 max_upload_size = 10485760      # 10MB
 
 [accounts]
-base_directory = ""             # Default: ~/.walink/accounts
+base_directory = ""             # Default: ~/.notalk/accounts
                                 # Each account gets a subdirectory with its UUID
 
 [accounts.defaults]
@@ -67,20 +67,20 @@ default_plan = "free"                  # Plan assigned to new users
 
 ## Environment Variables
 
-All config keys map to environment variables with the `WALINK_` prefix. Nested keys use underscores.
+All config keys map to environment variables with the `NOTALK_` prefix. Nested keys use underscores.
 
 | Config Key | Environment Variable | Example |
 |-----------|---------------------|---------|
-| `server.host` | `WALINK_SERVER_HOST` | `0.0.0.0` |
-| `server.port` | `WALINK_SERVER_PORT` | `3000` |
-| `auth.secret_key` | `WALINK_AUTH_SECRET_KEY` | `my-secret` |
-| `auth.registration_enabled` | `WALINK_AUTH_REGISTRATION_ENABLED` | `true` |
-| `logging.level` | `WALINK_LOG_LEVEL` | `debug` |
-| `database.dsn` | `WALINK_DATABASE_DSN` | `postgres://walink:walink@localhost:5432/walink?sslmode=disable` |
-| `accounts.base_directory` | `WALINK_ACCOUNTS_DIR` | `/data/accounts` |
-| `cors.allow_origins` | `WALINK_CORS_ORIGINS` | `*` |
-| `swagger.enabled` | `WALINK_SWAGGER_ENABLED` | `true` |
-| `billing.enabled` | `WALINK_BILLING_ENABLED` | `false` |
+| `server.host` | `NOTALK_SERVER_HOST` | `0.0.0.0` |
+| `server.port` | `NOTALK_SERVER_PORT` | `3000` |
+| `auth.secret_key` | `NOTALK_AUTH_SECRET_KEY` | `my-secret` |
+| `auth.registration_enabled` | `NOTALK_AUTH_REGISTRATION_ENABLED` | `true` |
+| `logging.level` | `NOTALK_LOG_LEVEL` | `debug` |
+| `database.dsn` | `NOTALK_DATABASE_DSN` | `postgres://notalk:notalk@localhost:5432/notalk?sslmode=disable` |
+| `accounts.base_directory` | `NOTALK_ACCOUNTS_DIR` | `/data/accounts` |
+| `cors.allow_origins` | `NOTALK_CORS_ORIGINS` | `*` |
+| `swagger.enabled` | `NOTALK_SWAGGER_ENABLED` | `true` |
+| `billing.enabled` | `NOTALK_BILLING_ENABLED` | `false` |
 
 ## Data Layout
 
@@ -90,7 +90,7 @@ PostgreSQL:
 - Each account's WhatsApp session stored via whatsmeow PostgreSQL store (sqlstore)
 
 File system:
-~/.walink/accounts/{uuid}/  # WhatsApp session cache (if any)
+~/.notalk/accounts/{uuid}/  # WhatsApp session cache (if any)
 ```
 
 ## Docker
@@ -101,7 +101,7 @@ The included `docker-compose.yml` maps all key settings to environment variables
 docker compose up -d
 ```
 
-Data is persisted in a named volume (`walink-data`) mounted at `/data`.
+Data is persisted in a named volume (`notalk-data`) mounted at `/data`.
 
 ## Notes
 

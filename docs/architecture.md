@@ -2,15 +2,15 @@
 
 ## Overview
 
-WaLink is an HTTP API server and MCP server implementing WhatsApp's multi-device protocol. It provides a REST API, an MCP endpoint for AI agents, and an embedded web dashboard — all from a single Go binary. No browser or headless Chrome needed.
+NoTalk is an HTTP API server and MCP server implementing WhatsApp's multi-device protocol. It provides a REST API and an MCP endpoint for AI agents — all from a single Go binary. No browser or headless Chrome needed. The web dashboard is a separate project (`notalk-web`).
 
 ```mermaid
 flowchart TB
     Client["Client<br/>(any lang)"] <-->|HTTP/JSON| Server
     Agent["AI Agent<br/>(Claude, etc)"] <-->|MCP/SSE<br/>/mcp| Server
-    Browser["Browser<br/>(Web UI)"] <-->|HTMX/HTML| Server
+    Web["Web Dashboard<br/>(notalk-web)"] <-->|HTTP/JSON| Server
 
-    subgraph Server["WaLink Server"]
+    subgraph Server["NoTalk Server"]
         Handlers["Handlers<br/>(REST)"] --- Middleware["Middleware<br/>(Auth, RBAC, CORS, Billing)"]
         Handlers --> AccountManager["AccountManager<br/>(multi-account)"]
         AccountManager --> Account["Account<br/>(whatsmeow.Client)"]
@@ -28,8 +28,8 @@ flowchart TB
 ## Project Layout
 
 ```
-walink/
-├── cmd/walink/main.go              Entry point, server bootstrap, MCP transport
+notalk/
+├── cmd/notalk/main.go              Entry point, server bootstrap, MCP transport
 ├── config/                         TOML configuration files
 ├── docs/architecture.md            Architecture (this file, Mermaid diagrams)
 └── internal/
@@ -59,20 +59,9 @@ walink/
     │   ├── account.go              WhatsApp-backed account lifecycle
     │   ├── manager.go              Multi-account orchestration
     │   └── proxy.go                SOCKS5/HTTP proxy support
-    ├── smtp/smtp.go                Email delivery for password resets
-    └── web/
-        ├── routes.go               Web dashboard route registration
-        ├── accounts.go             Account UI handlers
-        ├── admin.go                User/role admin pages
-        ├── auth.go                 Login/register/forgot-password pages
-        ├── middleware.go           Web session auth
-        ├── render.go               Template rendering
-        ├── static/                 CSS, JS assets
-        └── templates/              HTML templates (HTMX)
-            └── pages/
-                ├── messaging.html  Full messaging UI (chats, send, media, bulk)
-                ├── pricing.html    Billing plans page
-                └── ...
+    └── smtp/smtp.go                Email delivery for password resets
+
+> Web dashboard (`notalk-web`) lives in a separate repository/project and talks to this server via the REST API.
 ```
 
 ## Key Components
@@ -151,7 +140,7 @@ sequenceDiagram
     participant Acc as Account
     participant WA as WhatsApp
 
-    Agent->>MW: POST /mcp (Bearer walink_... / secret)
+    Agent->>MW: POST /mcp (Bearer notalk_... / secret)
     MW->>MW: Auth + MCPScope (account binding)
     MW->>MCP: CallTool (e.g. send_message)
     MCP->>Mgr: GetAccount(id) / ResolveAccount
@@ -166,7 +155,7 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-    subgraph PG["PostgreSQL (walink DB)"]
+    subgraph PG["PostgreSQL (notalk DB)"]
         A["account<br/>app_user / role / permissions"]
         B["api_key<br/>(SHA-256, expiry, binding)"]
         C["settings<br/>(mcp.enabled, billing, etc)"]
@@ -175,7 +164,7 @@ flowchart LR
     end
 
     subgraph FS["Filesystem (legacy placeholder)"]
-        F["~/.walink/accounts/{uuid}/<br/>empty — sessions in Postgres<br/>os.MkdirAll only"]
+        F["~/.notalk/accounts/{uuid}/<br/>empty — sessions in Postgres<br/>os.MkdirAll only"]
     end
 
     A --- PG
@@ -183,17 +172,17 @@ flowchart LR
 ```
 
 ```text
-PostgreSQL:5432/walink
+PostgreSQL:5432/notalk
   tables: account, app_user, role, role_permission, api_key, setting, plans, subscriptions, usage, whatsmeow_caches
 Filesystem (legacy, empty placeholder):
-  ~/.walink/accounts/{uuid}/   # created via os.MkdirAll, no session.db
+  ~/.notalk/accounts/{uuid}/   # created via os.MkdirAll, no session.db
   /data/accounts/{uuid}/       # Docker volume — same, empty
   Signal keys & sessions live in Postgres whatsmeow store, not filesystem
 ```
 
 ## Protocol
 
-WaLink implements WhatsApp's multi-device protocol:
+NoTalk implements WhatsApp's multi-device protocol:
 - **Noise Protocol** for encrypted WebSocket transport
 - **Signal Protocol** (libsignal) for end-to-end encrypted messages
 - **Protobuf** for message serialization

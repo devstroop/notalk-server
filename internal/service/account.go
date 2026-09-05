@@ -18,9 +18,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 
-	"github.com/devstroop/walink/internal/config"
-	"github.com/devstroop/walink/internal/database"
-	"github.com/devstroop/walink/internal/model"
+	"github.com/devstroop/notalk/internal/config"
+	"github.com/devstroop/notalk/internal/database"
+	"github.com/devstroop/notalk/internal/model"
 
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
@@ -157,7 +157,7 @@ func (a *Account) prepareClient(ctx context.Context) error {
 	// Ensure push name is set before connecting so the handshake includes it
 	// and SendPresence won't fail after the Connected event.
 	if device.PushName == "" {
-		device.PushName = "WaLink"
+		device.PushName = "NoTalk"
 	}
 
 	client := whatsmeow.NewClient(device, logger)
@@ -1711,7 +1711,7 @@ func (a *Account) handleEvent(evt interface{}) {
 				}
 			}
 			if client.Store.PushName == "" {
-				client.Store.PushName = "WaLink"
+				client.Store.PushName = "NoTalk"
 			}
 			_ = client.SendPresence(context.Background(), types.PresenceAvailable)
 		}

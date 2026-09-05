@@ -8,14 +8,14 @@ import (
 	"os"
 	"testing"
 
-	"github.com/devstroop/walink/internal/database"
+	"github.com/devstroop/notalk/internal/database"
 	"github.com/golang-jwt/jwt/v5"
 	_ "github.com/lib/pq"
 )
 
 func cleanDB(t *testing.T) {
 	t.Helper()
-	dsn := os.Getenv("WALINK_TEST_DSN")
+	dsn := os.Getenv("NOTALK_TEST_DSN")
 	if dsn == "" {
 		return
 	}
@@ -166,9 +166,9 @@ func TestBillingEnforcerDisabled(t *testing.T) {
 
 func TestBillingEnforcerSystemBypass(t *testing.T) {
 	cleanDB(t)
-	dsn := os.Getenv("WALINK_TEST_DSN")
+	dsn := os.Getenv("NOTALK_TEST_DSN")
 	if dsn == "" {
-		t.Skip("WALINK_TEST_DSN not set")
+		t.Skip("NOTALK_TEST_DSN not set")
 	}
 	db, err := database.Open(dsn)
 	if err != nil {
@@ -197,9 +197,9 @@ func TestBillingEnforcerSystemBypass(t *testing.T) {
 
 func TestBillingEnforcerQuotaAndGates(t *testing.T) {
 	cleanDB(t)
-	dsn := os.Getenv("WALINK_TEST_DSN")
+	dsn := os.Getenv("NOTALK_TEST_DSN")
 	if dsn == "" {
-		t.Skip("WALINK_TEST_DSN not set")
+		t.Skip("NOTALK_TEST_DSN not set")
 	}
 	db, err := database.Open(dsn)
 	if err != nil {
@@ -279,9 +279,9 @@ func TestBillingEnforcerQuotaAndGates(t *testing.T) {
 
 func TestIncrementMessageUsage(t *testing.T) {
 	cleanDB(t)
-	dsn := os.Getenv("WALINK_TEST_DSN")
+	dsn := os.Getenv("NOTALK_TEST_DSN")
 	if dsn == "" {
-		t.Skip("WALINK_TEST_DSN not set")
+		t.Skip("NOTALK_TEST_DSN not set")
 	}
 	db, _ := database.Open(dsn)
 	defer func() { _ = db.Close() }()
@@ -304,9 +304,9 @@ func TestIncrementMessageUsage(t *testing.T) {
 
 func TestAuthJWTAndAPIKey(t *testing.T) {
 	cleanDB(t)
-	dsn := os.Getenv("WALINK_TEST_DSN")
+	dsn := os.Getenv("NOTALK_TEST_DSN")
 	if dsn == "" {
-		t.Skip("WALINK_TEST_DSN not set")
+		t.Skip("NOTALK_TEST_DSN not set")
 	}
 	db, _ := database.Open(dsn)
 	defer func() { _ = db.Close() }()
@@ -365,9 +365,9 @@ func TestAuthJWTAndAPIKey(t *testing.T) {
 
 func TestMCPScope(t *testing.T) {
 	cleanDB(t)
-	dsn := os.Getenv("WALINK_TEST_DSN")
+	dsn := os.Getenv("NOTALK_TEST_DSN")
 	if dsn == "" {
-		t.Skip("WALINK_TEST_DSN not set")
+		t.Skip("NOTALK_TEST_DSN not set")
 	}
 	db, _ := database.Open(dsn)
 	defer func() { _ = db.Close() }()

@@ -135,16 +135,16 @@ func TestEnvOverrides(t *testing.T) {
 	}
 	defer func() { _ = os.Chdir(origDir) }()
 
-	t.Setenv("WALINK_SERVER_HOST", "10.0.0.1")
-	t.Setenv("WALINK_SERVER_PORT", "9090")
-	t.Setenv("WALINK_AUTH_SECRET_KEY", "env-secret")
-	t.Setenv("WALINK_LOG_LEVEL", "debug")
-	t.Setenv("WALINK_DATABASE_DSN", "postgres://localhost:5432/walink_test?sslmode=disable")
-	t.Setenv("WALINK_ACCOUNTS_DIR", "/data/accounts")
-	t.Setenv("WALINK_CORS_ORIGINS", "https://a.com,https://b.com")
-	t.Setenv("WALINK_SWAGGER_ENABLED", "false")
-	t.Setenv("WALINK_WEBHOOKS_ENABLED", "true")
-	t.Setenv("WALINK_LIMITS_MAX_CONCURRENT", "100")
+	t.Setenv("NOTALK_SERVER_HOST", "10.0.0.1")
+	t.Setenv("NOTALK_SERVER_PORT", "9090")
+	t.Setenv("NOTALK_AUTH_SECRET_KEY", "env-secret")
+	t.Setenv("NOTALK_LOG_LEVEL", "debug")
+	t.Setenv("NOTALK_DATABASE_DSN", "postgres://localhost:5432/notalk_test?sslmode=disable")
+	t.Setenv("NOTALK_ACCOUNTS_DIR", "/data/accounts")
+	t.Setenv("NOTALK_CORS_ORIGINS", "https://a.com,https://b.com")
+	t.Setenv("NOTALK_SWAGGER_ENABLED", "false")
+	t.Setenv("NOTALK_WEBHOOKS_ENABLED", "true")
+	t.Setenv("NOTALK_LIMITS_MAX_CONCURRENT", "100")
 
 	cfg, err := Load()
 	if err != nil {
@@ -163,8 +163,8 @@ func TestEnvOverrides(t *testing.T) {
 	if cfg.Logging.Level != "debug" {
 		t.Errorf("expected log level debug, got %s", cfg.Logging.Level)
 	}
-	if cfg.Database.DSN != "postgres://localhost:5432/walink_test?sslmode=disable" {
-		t.Errorf("expected db dsn postgres://localhost:5432/walink_test?sslmode=disable, got %s", cfg.Database.DSN)
+	if cfg.Database.DSN != "postgres://localhost:5432/notalk_test?sslmode=disable" {
+		t.Errorf("expected db dsn postgres://localhost:5432/notalk_test?sslmode=disable, got %s", cfg.Database.DSN)
 	}
 	if cfg.Accounts.BaseDirectory != "/data/accounts" {
 		t.Errorf("expected accounts dir /data/accounts, got %s", cfg.Accounts.BaseDirectory)

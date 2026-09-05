@@ -14,41 +14,40 @@ func TestEnvOverridesFull(t *testing.T) {
 	}
 	defer func() { _ = os.Chdir(origDir) }()
 
-	t.Setenv("WALINK_SERVER_HOST", "1.1.1.1")
-	t.Setenv("WALINK_SERVER_PORT", "8081")
-	t.Setenv("WALINK_AUTH_SECRET_KEY", "full-secret")
-	t.Setenv("WALINK_AUTH_REGISTRATION_ENABLED", "true")
-	t.Setenv("WALINK_LOG_LEVEL", "warn")
-	t.Setenv("WALINK_DATABASE_DSN", "postgres://x:5432/y?sslmode=disable")
-	t.Setenv("WALINK_CORS_ORIGINS", "https://c.com")
-	t.Setenv("WALINK_LIMITS_MAX_CONCURRENT", "77")
-	t.Setenv("WALINK_LIMITS_TIMEOUT_MS", "12345")
-	t.Setenv("WALINK_LIMITS_MAX_UPLOAD", "9999")
-	t.Setenv("WALINK_ACCOUNTS_DIR", "/tmp/accounts")
-	t.Setenv("WALINK_WEBHOOKS_ENABLED", "true")
-	t.Setenv("WALINK_WEBHOOKS_TIMEOUT_MS", "7777")
-	t.Setenv("WALINK_WEBHOOKS_RETRY_COUNT", "5")
-	t.Setenv("WALINK_WEBHOOKS_RETRY_DELAY_MS", "8888")
-	t.Setenv("WALINK_SMTP_HOST", "smtp.example.com")
-	t.Setenv("WALINK_SMTP_PORT", "2525")
-	t.Setenv("WALINK_SMTP_USERNAME", "user")
-	t.Setenv("WALINK_SMTP_PASSWORD", "pass")
-	t.Setenv("WALINK_SMTP_FROM", "from@example.com")
-	t.Setenv("WALINK_SMTP_TLS", "true")
-	t.Setenv("WALINK_SMTP_STARTTLS", "true")
-	t.Setenv("WALINK_SWAGGER_ENABLED", "false")
-	t.Setenv("WALINK_SWAGGER_PATH", "/docs")
-	t.Setenv("WALINK_WEB_ENABLED", "false")
-	t.Setenv("WALINK_MCP_ENABLED", "false")
-	t.Setenv("WALINK_BILLING_ENABLED", "true")
-	t.Setenv("WALINK_BILLING_STRIPE_SECRET_KEY", "sk_test")
-	t.Setenv("WALINK_BILLING_STRIPE_WEBHOOK_SECRET", "whsec_test")
-	t.Setenv("WALINK_BILLING_DEFAULT_PLAN", "pro")
-	t.Setenv("WALINK_LLM_ENABLED", "true")
-	t.Setenv("WALINK_LLM_PROVIDER", "openai")
-	t.Setenv("WALINK_LLM_API_KEY", "sk-openai")
-	t.Setenv("WALINK_LLM_BASE_URL", "https://api.openai.com/v1")
-	t.Setenv("WALINK_LLM_MODEL", "gpt-4o")
+	t.Setenv("NOTALK_SERVER_HOST", "1.1.1.1")
+	t.Setenv("NOTALK_SERVER_PORT", "8081")
+	t.Setenv("NOTALK_AUTH_SECRET_KEY", "full-secret")
+	t.Setenv("NOTALK_AUTH_REGISTRATION_ENABLED", "true")
+	t.Setenv("NOTALK_LOG_LEVEL", "warn")
+	t.Setenv("NOTALK_DATABASE_DSN", "postgres://x:5432/y?sslmode=disable")
+	t.Setenv("NOTALK_CORS_ORIGINS", "https://c.com")
+	t.Setenv("NOTALK_LIMITS_MAX_CONCURRENT", "77")
+	t.Setenv("NOTALK_LIMITS_TIMEOUT_MS", "12345")
+	t.Setenv("NOTALK_LIMITS_MAX_UPLOAD", "9999")
+	t.Setenv("NOTALK_ACCOUNTS_DIR", "/tmp/accounts")
+	t.Setenv("NOTALK_WEBHOOKS_ENABLED", "true")
+	t.Setenv("NOTALK_WEBHOOKS_TIMEOUT_MS", "7777")
+	t.Setenv("NOTALK_WEBHOOKS_RETRY_COUNT", "5")
+	t.Setenv("NOTALK_WEBHOOKS_RETRY_DELAY_MS", "8888")
+	t.Setenv("NOTALK_SMTP_HOST", "smtp.example.com")
+	t.Setenv("NOTALK_SMTP_PORT", "2525")
+	t.Setenv("NOTALK_SMTP_USERNAME", "user")
+	t.Setenv("NOTALK_SMTP_PASSWORD", "pass")
+	t.Setenv("NOTALK_SMTP_FROM", "from@example.com")
+	t.Setenv("NOTALK_SMTP_TLS", "true")
+	t.Setenv("NOTALK_SMTP_STARTTLS", "true")
+	t.Setenv("NOTALK_SWAGGER_ENABLED", "false")
+	t.Setenv("NOTALK_SWAGGER_PATH", "/docs")
+	t.Setenv("NOTALK_MCP_ENABLED", "false")
+	t.Setenv("NOTALK_BILLING_ENABLED", "true")
+	t.Setenv("NOTALK_BILLING_STRIPE_SECRET_KEY", "sk_test")
+	t.Setenv("NOTALK_BILLING_STRIPE_WEBHOOK_SECRET", "whsec_test")
+	t.Setenv("NOTALK_BILLING_DEFAULT_PLAN", "pro")
+	t.Setenv("NOTALK_LLM_ENABLED", "true")
+	t.Setenv("NOTALK_LLM_PROVIDER", "openai")
+	t.Setenv("NOTALK_LLM_API_KEY", "sk-openai")
+	t.Setenv("NOTALK_LLM_BASE_URL", "https://api.openai.com/v1")
+	t.Setenv("NOTALK_LLM_MODEL", "gpt-4o")
 
 	cfg, err := Load()
 	if err != nil {
@@ -126,9 +125,6 @@ func TestEnvOverridesFull(t *testing.T) {
 	if cfg.Swagger.Path != "/docs" {
 		t.Error("swagger path")
 	}
-	if cfg.Web.Enabled {
-		t.Error("web should be false")
-	}
 	if cfg.MCP.Enabled {
 		t.Error("mcp should be false")
 	}
@@ -170,14 +166,14 @@ func TestEnvOverridesInvalidIntsIgnored(t *testing.T) {
 	defer func() { _ = os.Chdir(origDir) }()
 
 	// invalid ints should be ignored, defaults remain
-	t.Setenv("WALINK_SERVER_PORT", "notanint")
-	t.Setenv("WALINK_LIMITS_MAX_CONCURRENT", "bad")
-	t.Setenv("WALINK_LIMITS_TIMEOUT_MS", "bad")
-	t.Setenv("WALINK_LIMITS_MAX_UPLOAD", "bad")
-	t.Setenv("WALINK_WEBHOOKS_TIMEOUT_MS", "bad")
-	t.Setenv("WALINK_WEBHOOKS_RETRY_COUNT", "bad")
-	t.Setenv("WALINK_WEBHOOKS_RETRY_DELAY_MS", "bad")
-	t.Setenv("WALINK_SMTP_PORT", "bad")
+	t.Setenv("NOTALK_SERVER_PORT", "notanint")
+	t.Setenv("NOTALK_LIMITS_MAX_CONCURRENT", "bad")
+	t.Setenv("NOTALK_LIMITS_TIMEOUT_MS", "bad")
+	t.Setenv("NOTALK_LIMITS_MAX_UPLOAD", "bad")
+	t.Setenv("NOTALK_WEBHOOKS_TIMEOUT_MS", "bad")
+	t.Setenv("NOTALK_WEBHOOKS_RETRY_COUNT", "bad")
+	t.Setenv("NOTALK_WEBHOOKS_RETRY_DELAY_MS", "bad")
+	t.Setenv("NOTALK_SMTP_PORT", "bad")
 
 	cfg, err := Load()
 	if err != nil {
@@ -200,32 +196,32 @@ func TestLLMAutoEnable(t *testing.T) {
 	defer func() { _ = os.Chdir(origDir) }()
 
 	// provider ollama should auto-enable even if enabled not set
-	t.Setenv("WALINK_LLM_ENABLED", "false")
-	t.Setenv("WALINK_LLM_PROVIDER", "ollama")
-	t.Setenv("WALINK_LLM_API_KEY", "")
+	t.Setenv("NOTALK_LLM_ENABLED", "false")
+	t.Setenv("NOTALK_LLM_PROVIDER", "ollama")
+	t.Setenv("NOTALK_LLM_API_KEY", "")
 	cfg, err := Load()
 	if err != nil {
 		t.Fatal(err)
 	}
 	// applyEnvOverrides has logic: if !Enabled && (APIKey != "" || Provider == "ollama") then Enabled=true
 	// But we set Enabled=false explicitly via env, then check auto-enable
-	// Actually EnvOverrides sets Enabled from WALINK_LLM_ENABLED first, then later checks auto-enable
+	// Actually EnvOverrides sets Enabled from NOTALK_LLM_ENABLED first, then later checks auto-enable
 	// So with ENABLED=false but PROVIDER=ollama, it should become true
 	if !cfg.LLM.Enabled {
 		t.Error("expected LLM auto-enabled for ollama")
 	}
 
 	// clean
-	_ = os.Unsetenv("WALINK_LLM_PROVIDER")
-	_ = os.Unsetenv("WALINK_LLM_API_KEY")
-	_ = os.Unsetenv("WALINK_LLM_ENABLED")
+	_ = os.Unsetenv("NOTALK_LLM_PROVIDER")
+	_ = os.Unsetenv("NOTALK_LLM_API_KEY")
+	_ = os.Unsetenv("NOTALK_LLM_ENABLED")
 
 	dir2 := t.TempDir()
 	origDir2, _ := os.Getwd()
 	_ = os.Chdir(dir2)
 	defer func() { _ = os.Chdir(origDir2) }()
-	t.Setenv("WALINK_LLM_API_KEY", "sk-xyz")
-	t.Setenv("WALINK_LLM_ENABLED", "false")
+	t.Setenv("NOTALK_LLM_API_KEY", "sk-xyz")
+	t.Setenv("NOTALK_LLM_ENABLED", "false")
 	cfg, _ = Load()
 	if !cfg.LLM.Enabled {
 		t.Error("expected auto-enable for api key")
@@ -243,9 +239,6 @@ func TestDefaultsAllFields(t *testing.T) {
 	if !cfg.MCP.Enabled {
 		t.Error("mcp default")
 	}
-	if !cfg.Web.Enabled {
-		t.Error("web default")
-	}
 }
 
 func TestLoadWithDatabaseDSNDefault(t *testing.T) {
@@ -256,19 +249,19 @@ func TestLoadWithDatabaseDSNDefault(t *testing.T) {
 	}
 	defer func() { _ = os.Chdir(origDir) }()
 	// ensure no env
-	_ = os.Unsetenv("WALINK_DATABASE_DSN")
+	_ = os.Unsetenv("NOTALK_DATABASE_DSN")
 	cfg, err := Load()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Database.DSN != "postgres://localhost:5432/walink?sslmode=disable" {
+	if cfg.Database.DSN != "postgres://localhost:5432/notalk?sslmode=disable" {
 		t.Errorf("expected default DSN got %s", cfg.Database.DSN)
 	}
 	if cfg.Accounts.BaseDirectory == "" {
 		t.Error("expected accounts dir default")
 	}
 	// check homeDir via config
-	if cfg.Accounts.BaseDirectory != filepath.Join(homeDir(), ".walink", "accounts") {
+	if cfg.Accounts.BaseDirectory != filepath.Join(homeDir(), ".notalk", "accounts") {
 		t.Errorf("expected home dir based path got %s", cfg.Accounts.BaseDirectory)
 	}
 }

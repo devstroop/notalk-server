@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/devstroop/walink/internal/model"
+	"github.com/devstroop/notalk/internal/model"
 	"github.com/google/uuid"
 )
 

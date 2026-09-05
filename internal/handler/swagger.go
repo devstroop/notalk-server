@@ -34,7 +34,7 @@ func swaggerHTML(basePath string) string {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>WaLink API</title>
+  <title>NoTalk API</title>
   <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
   <style>html{box-sizing:border-box;overflow-y:scroll}*,*::before,*::after{box-sizing:inherit}body{margin:0;background:#fafafa}</style>
 </head>

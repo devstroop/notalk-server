@@ -1,18 +1,18 @@
 {
   "servers": {
-    "walink": {
+    "notalk": {
       "type": "http",
       "url": "http://192.168.1.49:3000/mcp",
       "headers": {
-        "Authorization": "Bearer ${input:walink_api_key}"
+        "Authorization": "Bearer ${input:notalk_api_key}"
       }
     }
   },
   "inputs": [
     {
-      "id": "walink_api_key",
+      "id": "notalk_api_key",
       "type": "promptString",
-      "description": "WaLink API secret key (auth.secret_key from config)",
+      "description": "NoTalk API secret key (auth.secret_key from config)",
       "password": true
     }
   ]

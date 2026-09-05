@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/devstroop/walink/internal/model"
+	"github.com/devstroop/notalk/internal/model"
 )
 
 func TestHealth(t *testing.T) {
