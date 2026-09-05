@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/devstroop/walink/internal/database"
+	"github.com/devstroop/notalk/internal/database"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -33,7 +33,7 @@ var ErrInvalidCredentials = errors.New("invalid credentials")
 //   - recognized==true, err==nil, principal!=nil → valid → STOP
 //   - Never: invalid credential silently falling back to another mechanism
 //
-// Example trap that must 401: `Authorization: Bearer garbage` + valid `Cookie: walink_session`
+// Example trap that must 401: `Authorization: Bearer garbage` + valid `Cookie: notalk_session`
 // must not authenticate via session.
 type Authenticator interface {
 	Authenticate(r *http.Request) (*Principal, bool, error)
@@ -42,7 +42,7 @@ type Authenticator interface {
 // ─── Secret (admin bearer) ───────────────────────────────────────
 
 type SecretAuthenticator struct {
-	Secret string // AdminSecret (WALINK_ADMIN_SECRET, fallback WALINK_AUTH_SECRET_KEY)
+	Secret string // AdminSecret (NOTALK_ADMIN_SECRET, fallback NOTALK_AUTH_SECRET_KEY)
 }
 
 func (a *SecretAuthenticator) Authenticate(r *http.Request) (*Principal, bool, error) {
@@ -71,7 +71,7 @@ func (a *SecretAuthenticator) Authenticate(r *http.Request) (*Principal, bool, e
 // ─── JWT ──────────────────────────────────────────────────────────
 
 type JWTAuthenticator struct {
-	Secret string // JWTSecret (WALINK_JWT_SECRET, fallback WALINK_AUTH_SECRET_KEY)
+	Secret string // JWTSecret (NOTALK_JWT_SECRET, fallback NOTALK_AUTH_SECRET_KEY)
 	DB     *database.DB
 }
 
@@ -126,7 +126,7 @@ func (a *JWTAuthenticator) Authenticate(r *http.Request) (*Principal, bool, erro
 	}, true, nil
 }
 
-// ─── API Key (walink_*) ──────────────────────────────────────────
+// ─── API Key (notalk_*) ──────────────────────────────────────────
 
 type APIKeyAuthenticator struct {
 	DB *database.DB
@@ -137,7 +137,7 @@ func (a *APIKeyAuthenticator) Authenticate(r *http.Request) (*Principal, bool, e
 	if !ok {
 		return nil, false, ErrNoCredentials
 	}
-	if !strings.HasPrefix(token, "walink_") {
+	if !strings.HasPrefix(token, "notalk_") {
 		return nil, false, ErrNoCredentials
 	}
 	hash := sha256.Sum256([]byte(token))
@@ -179,15 +179,15 @@ func (a *APIKeyAuthenticator) Authenticate(r *http.Request) (*Principal, bool, e
 	return p, true, nil
 }
 
-// ─── Session (cookie walink_session) ─────────────────────────────
+// ─── Session (cookie notalk_session) ─────────────────────────────
 
 type SessionAuthenticator struct {
-	Secret string // WALINK_JWT_SECRET (same signing key) or dedicated session secret
+	Secret string // NOTALK_JWT_SECRET (same signing key) or dedicated session secret
 	DB     *database.DB
 }
 
 func (a *SessionAuthenticator) Authenticate(r *http.Request) (*Principal, bool, error) {
-	c, err := r.Cookie("walink_session")
+	c, err := r.Cookie("notalk_session")
 	if err != nil || c.Value == "" {
 		return nil, false, ErrNoCredentials
 	}
@@ -230,7 +230,7 @@ func (a *SessionAuthenticator) Authenticate(r *http.Request) (*Principal, bool, 
 // ─── Service (internal) ──────────────────────────────────────────
 
 type ServiceAuthenticator struct {
-	Secret string // WALINK_SERVICE_SECRET (future); not wired until /internal consumer exists
+	Secret string // NOTALK_SERVICE_SECRET (future); not wired until /internal consumer exists
 }
 
 func (a *ServiceAuthenticator) Authenticate(r *http.Request) (*Principal, bool, error) {
