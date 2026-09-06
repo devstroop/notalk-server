@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: notalk
-      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
       POSTGRES_DB: notalk
     volumes:
       - pg-data:/var/lib/postgresql
@@ -33,7 +33,7 @@ services:
       NOTALK_SERVER_PORT: "${NOTALK_SERVER_PORT:-5000}"
       NOTALK_AUTH_SECRET_KEY: "${NOTALK_AUTH_SECRET_KEY:-changeme}"
       NOTALK_LOG_LEVEL: "${NOTALK_LOG_LEVEL:-info}"
-      NOTALK_DATABASE_DSN: "postgres://notalk:${POSTGRES_PASSWORD}@postgres:5432/notalk?sslmode=disable"
+      NOTALK_DATABASE_DSN: "postgres://notalk:${POSTGRES_PASSWORD:-postgres}@postgres:5432/notalk?sslmode=disable"
       NOTALK_ACCOUNTS_DIR: "/data/accounts"
       NOTALK_CORS_ORIGINS: "${NOTALK_CORS_ORIGINS:-*}"
       NOTALK_AUTH_REGISTRATION_ENABLED: "${NOTALK_AUTH_REGISTRATION_ENABLED:-true}"
