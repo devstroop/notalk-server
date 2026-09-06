@@ -55,7 +55,7 @@ func main() {
 	// Set whatsmeow PostgreSQL array wrapper for session stores
 	sqlstore.PostgresArrayWrapper = pq.Array
 
-	if cfg.Auth.EffectiveJWTSecret() == "" || cfg.Auth.EffectiveJWTSecret() == "changeme" || cfg.Auth.EffectiveJWTSecret() == "change-this-secret-key-in-production" || cfg.Auth.EffectiveAdminSecret() == "" || cfg.Auth.EffectiveAdminSecret() == "changeme" || cfg.Auth.EffectiveAdminSecret() == "change-this-secret-key-in-production" {
+	if cfg.Auth.EffectiveJWTSecret() == "" || cfg.Auth.EffectiveJWTSecret() == "changeme" || cfg.Auth.EffectiveAdminSecret() == "" || cfg.Auth.EffectiveAdminSecret() == "changeme" {
 		log.Warn().Msg("using default auth secret key — set NOTALK_JWT_SECRET and NOTALK_ADMIN_SECRET for production (NOTALK_AUTH_SECRET_KEY fallback is deprecated)")
 	} else if cfg.Auth.UsesLegacySecret() {
 		log.Warn().Msg("using NOTALK_AUTH_SECRET_KEY fallback — set NOTALK_JWT_SECRET and NOTALK_ADMIN_SECRET to silence and to split JWT/admin boundaries")

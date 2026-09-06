@@ -287,7 +287,7 @@ func applyEnvOverrides(cfg *Config) {
 func defaults() *Config {
 	return &Config{
 		Server:  ServerConfig{Host: "0.0.0.0", Port: 5000},
-		Auth:    AuthConfig{SecretKey: "change-this-secret-key-in-production"},
+		Auth:    AuthConfig{SecretKey: "changeme"},
 		SMTP:    SMTPConfig{Port: 587, StartTLS: true},
 		Logging: LoggingConfig{Level: "info"},
 		CORS: CORSConfig{
