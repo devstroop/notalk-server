@@ -302,6 +302,10 @@ func (d *DB) migrate() error {
 		return err
 	}
 
+	if err := d.migrateBilling(); err != nil {
+		return err
+	}
+
 	// ── Agent tables (session, config, log) ─────────
 	if err := d.migrateAgent(); err != nil {
 		return err
