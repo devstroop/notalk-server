@@ -1369,33 +1369,50 @@ func (a *Account) ListMessages(chatJID string, limit int, before string) (model.
 		return model.MessageListResponse{}, fmt.Errorf("no database")
 	}
 
-	// Also query any LID variant of this chat, since older messages may
-	// have been stored with a LID JID before we added resolution.
-	altJID := a.reverseLID(chatJID)
-
-	records, err := a.db.ListMessages(a.ID, chatJID, limit, before)
-	if err != nil {
-		return model.MessageListResponse{}, fmt.Errorf("list messages: %w", err)
+	// Query both PN and LID variants since history may be stored under either
+	// (older messages with LID, newer with PN after resolveLID, or unsaved chats).
+	phoneJID := a.resolveLID(chatJID)
+	lidJID := a.reverseLID(chatJID)
+	jids := map[string]struct{}{chatJID: {}}
+	if phoneJID != chatJID {
+		jids[phoneJID] = struct{}{}
 	}
-	// Merge messages from the LID variant if it differs.
-	if altJID != chatJID {
-		altRecords, err := a.db.ListMessages(a.ID, altJID, limit, before)
-		if err == nil && len(altRecords) > 0 {
-			records = append(records, altRecords...)
-			// Re-sort by timestamp descending and limit.
-			sort.Slice(records, func(i, j int) bool {
-				return records[i].Timestamp > records[j].Timestamp
-			})
-			if len(records) > limit {
-				records = records[:limit]
+	if lidJID != chatJID {
+		jids[lidJID] = struct{}{}
+	}
+
+	var records []*database.MessageRecord
+	first := true
+	for jid := range jids {
+		recs, err := a.db.ListMessages(a.ID, jid, limit, before)
+		if err != nil {
+			if first {
+				return model.MessageListResponse{}, fmt.Errorf("list messages: %w", err)
 			}
+			continue
+		}
+		if first {
+			records = recs
+			first = false
+		} else if len(recs) > 0 {
+			records = append(records, recs...)
+		}
+	}
+	if len(jids) > 1 && len(records) > 1 {
+		sort.Slice(records, func(i, j int) bool {
+			return records[i].Timestamp > records[j].Timestamp
+		})
+		if len(records) > limit {
+			records = records[:limit]
 		}
 	}
 
 	msgs := make([]model.MessageInfo, 0, len(records))
 	for _, r := range records {
-		// Skip protocol/system messages and empty "other" type messages
-		if r.Type == "protocol" || (r.Type == "other" && r.Body == "") {
+		// Only skip protocol/system messages; keep "other" with empty body so
+		// unsaved chats where all messages are type=other don't appear empty.
+		// Frontend will render a placeholder.
+		if r.Type == "protocol" {
 			continue
 		}
 		msgs = append(msgs, model.MessageInfo{
@@ -1562,11 +1579,19 @@ func (a *Account) ListChats(ctx context.Context) ([]model.ChatInfo, error) {
 			continue
 		}
 		seen[resolvedJID] = true
-		name := resolvedJID
 		isGroup := strings.HasSuffix(resolvedJID, "@g.us")
+		var name string
 		if !isGroup {
 			// Extract phone number from JID for display
 			name = "+" + strings.SplitN(resolvedJID, "@", 2)[0]
+		} else {
+			// Try to fetch group name; if unavailable leave empty so frontend shows placeholder
+			name = ""
+			if jid, err := types.ParseJID(resolvedJID); err == nil {
+				if gi, err := client.GetGroupInfo(ctx, jid); err == nil && gi.Name != "" {
+					name = gi.Name
+				}
+			}
 		}
 		chat := model.ChatInfo{
 			ID:      resolvedJID,
