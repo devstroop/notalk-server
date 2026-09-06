@@ -120,4 +120,17 @@ func RegisterRBACRoutes(mux *http.ServeMux, db *database.DB) {
 	mcpH := NewMCPHandler(db)
 	mux.HandleFunc("GET /api/v1/mcp", perm("mcp:read", mcpH.GetMCPSettings))
 	mux.HandleFunc("PATCH /api/v1/mcp", perm("*", mcpH.UpdateMCPSettings))
+
+	// Billing (admin only)
+	billing := NewBillingHandler(db)
+	mux.HandleFunc("GET /api/v1/billing/plans", perm("*", billing.ListPlans))
+	mux.HandleFunc("POST /api/v1/billing/plans", perm("*", billing.CreatePlan))
+	mux.HandleFunc("PATCH /api/v1/billing/plans/{id}", perm("*", billing.UpdatePlan))
+	mux.HandleFunc("PUT /api/v1/billing/plans/{id}", perm("*", billing.UpdatePlan))
+	mux.HandleFunc("DELETE /api/v1/billing/plans/{id}", perm("*", billing.DeletePlan))
+	mux.HandleFunc("GET /api/v1/billing/subscriptions", perm("*", billing.ListSubscriptions))
+	mux.HandleFunc("POST /api/v1/billing/subscriptions/{user_id}/assign", perm("*", billing.AssignPlan))
+	mux.HandleFunc("DELETE /api/v1/billing/subscriptions/{user_id}", perm("*", billing.DeleteSubscription))
+	mux.HandleFunc("GET /api/v1/billing/usage", perm("*", billing.GetUsage))
+	mux.HandleFunc("GET /api/v1/billing/config", perm("*", billing.GetBillingConfig))
 }
