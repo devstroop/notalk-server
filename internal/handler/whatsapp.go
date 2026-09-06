@@ -174,6 +174,29 @@ func (a *API) SendMessage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// ── Multipart: handle FormData chat/phone/jid before validation ──
+	if isMultipart {
+		if err := r.ParseMultipartForm(10 << 20); err != nil {
+			writeError(w, http.StatusBadRequest, "parse multipart: "+err.Error())
+			return
+		}
+		if qJID == "" && phone == "" {
+			if c := r.FormValue("chat"); c != "" {
+				qJID = c
+			} else if c := r.FormValue("jid"); c != "" {
+				qJID = c
+			} else if c := r.FormValue("phone"); c != "" {
+				phone = c
+			}
+		}
+		if text == "" {
+			text = r.FormValue("text")
+		}
+		if replyTo == "" {
+			replyTo = r.FormValue("reply_to")
+		}
+	}
+
 	// ── Validate recipient ──
 	if qJID == "" && phone == "" {
 		writeError(w, http.StatusBadRequest, "phone or jid/chat required (query param or JSON body)")
@@ -207,20 +230,8 @@ func (a *API) SendMessage(w http.ResponseWriter, r *http.Request) {
 		chatJID = resolved
 	}
 
-	// ── Multipart: may contain file and/or text ────
+	// ── Multipart: may contain file ────
 	if isMultipart {
-		if err := r.ParseMultipartForm(10 << 20); err != nil {
-			writeError(w, http.StatusBadRequest, "parse multipart: "+err.Error())
-			return
-		}
-
-		// Body text is used only when query text was not provided.
-		if text == "" {
-			text = r.FormValue("text")
-		}
-		if replyTo == "" {
-			replyTo = r.FormValue("reply_to")
-		}
 
 		file, header, err := r.FormFile("file")
 		if err == nil {
