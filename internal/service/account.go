@@ -19,6 +19,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 
+	"github.com/devstroop/notalk/internal/cache"
 	"github.com/devstroop/notalk/internal/config"
 	"github.com/devstroop/notalk/internal/database"
 	"github.com/devstroop/notalk/internal/model"
@@ -55,8 +56,6 @@ func getSharedContainer(ctx context.Context, dsn string, logger waLog.Logger) (*
 		if err != nil {
 			return nil, fmt.Errorf("open shared db: %w", err)
 		}
-		// Cap per-process so sum across accounts stays << postgres max_connections (100).
-		// 5 open / 2 idle is plenty for whatsmeow (mostly idle, short queries + Upgrade).
 		db.SetMaxOpenConns(5)
 		db.SetMaxIdleConns(2)
 		db.SetConnMaxLifetime(30 * time.Minute)
@@ -91,6 +90,7 @@ type Account struct {
 
 	rejected     bool // true after phone-number mismatch; blocks autoReconnect
 	db           *database.DB
+	cache        *cache.Cache
 	client       *whatsmeow.Client
 	container    *sqlstore.Container
 
@@ -150,6 +150,13 @@ func NewAccount(id, phone, name, dataDir, userID, sessionDSN string, createdAt t
 		db:           db,
 		sendLimiter:  newTokenBucket(30), // 30 messages per minute
 	}
+}
+
+// NewAccountWithCache constructs an Account with optional Redis cache (opt-in).
+func NewAccountWithCache(id, phone, name, dataDir, userID, sessionDSN string, createdAt time.Time, db *database.DB, c *cache.Cache) *Account {
+	a := NewAccount(id, phone, name, dataDir, userID, sessionDSN, createdAt, db)
+	a.cache = c
+	return a
 }
 
 // Connect initialises the WhatsApp client and connects to WhatsApp servers.
@@ -604,7 +611,7 @@ func (a *Account) HasStoredCredentials() bool {
 	if a.client != nil {
 		return a.client.Store.ID != nil
 	}
-	// Probe the shared PostgreSQL session store (shared DB, capped conns)
+	// Probe the shared PostgreSQL session store (shared, capped)
 	logger := waLog.Noop
 	container, err := getSharedContainer(context.Background(), a.SessionDSN, logger)
 	if err != nil {
@@ -1402,9 +1409,17 @@ func (a *Account) RevokeMessage(ctx context.Context, chatJID, messageID string) 
 }
 
 // ListMessages returns stored messages for a chat with cursor pagination.
+// When Redis is enabled (opt-in), results are cached for 5s per chat.
 func (a *Account) ListMessages(chatJID string, limit int, before string) (model.MessageListResponse, error) {
 	if a.db == nil {
 		return model.MessageListResponse{}, fmt.Errorf("no database")
+	}
+	cacheKey := fmt.Sprintf("msgs:%s:%s:%d:%s", a.ID, chatJID, limit, before)
+	if a.cache != nil && a.cache.Enabled() {
+		var cached model.MessageListResponse
+		if err := a.cache.GetJSON(context.Background(), cacheKey, &cached); err == nil {
+			return cached, nil
+		}
 	}
 
 	// Query both PN and LID variants since history may be stored under either
@@ -1453,7 +1468,7 @@ func (a *Account) ListMessages(chatJID string, limit int, before string) (model.
 		if r.Type == "protocol" {
 			continue
 		}
-		msgs = append(msgs, model.MessageInfo{
+			msgs = append(msgs, model.MessageInfo{
 			ID:        r.ID,
 			ChatJID:   r.ChatJID,
 			SenderJID: r.SenderJID,
@@ -1464,10 +1479,11 @@ func (a *Account) ListMessages(chatJID string, limit int, before string) (model.
 			Timestamp: r.Timestamp,
 		})
 	}
-	return model.MessageListResponse{
-		Messages: msgs,
-		Count:    len(msgs),
-	}, nil
+	resp := model.MessageListResponse{Messages: msgs, Count: len(msgs)}
+	if a.cache != nil && a.cache.Enabled() {
+		_ = a.cache.SetJSON(context.Background(), cacheKey, resp, 5*time.Second)
+	}
+	return resp, nil
 }
 
 // DownloadMedia downloads media from a received message.
@@ -1487,7 +1503,15 @@ func (a *Account) DownloadMedia(ctx context.Context, msg *waE2E.Message) ([]byte
 
 // ListChats returns known contacts and groups from the local store,
 // enriched with last message, unread count, and sorted by most recent activity.
+// When Redis is enabled (opt-in via NOTALK_REDIS_ENABLED), results are cached for 8s.
 func (a *Account) ListChats(ctx context.Context) ([]model.ChatInfo, error) {
+	cacheKey := "chats:" + a.ID
+	if a.cache != nil && a.cache.Enabled() {
+		var cached []model.ChatInfo
+		if err := a.cache.GetJSON(ctx, cacheKey, &cached); err == nil {
+			return cached, nil
+		}
+	}
 	client, err := a.requireConnectedClient()
 	if err != nil {
 		return nil, err
@@ -1662,6 +1686,9 @@ func (a *Account) ListChats(ctx context.Context) ([]model.ChatInfo, error) {
 		return ti > tj
 	})
 
+	if a.cache != nil && a.cache.Enabled() {
+		_ = a.cache.SetJSON(context.Background(), cacheKey, chats, 8*time.Second)
+	}
 	return chats, nil
 }
 
@@ -1703,6 +1730,13 @@ func (a *Account) handleEvent(evt interface{}) {
 	case *events.Message:
 		log.Debug().Str("account", a.ID).Str("from", v.Info.Sender.String()).Str("chat", v.Info.Chat.String()).Bool("from_me", v.Info.IsFromMe).Str("type", classifyMessage(v.Message)).Msg("message event received")
 		a.storeMessage(v)
+		if a.cache != nil && a.cache.Enabled() {
+			ctx := context.Background()
+			_ = a.cache.Del(ctx, "chats:"+a.ID)
+			if keys, err := a.cache.Keys(ctx, "msgs:"+a.ID+":*"); err == nil && len(keys) > 0 {
+				_ = a.cache.Del(ctx, keys...)
+			}
+		}
 		a.dispatchWebhook("message", map[string]any{
 			"id":         v.Info.ID,
 			"chat":       v.Info.Chat.String(),
@@ -1843,6 +1877,9 @@ func (a *Account) storeOutgoing(msgID, chatJID, msgType, body, mediaType string)
 	}
 	if err := a.db.InsertMessage(rec); err != nil {
 		log.Warn().Str("account", a.ID).Err(err).Msg("failed to store outgoing message")
+	}
+	if a.cache != nil && a.cache.Enabled() {
+		_ = a.cache.Del(context.Background(), "chats:"+a.ID)
 	}
 }
 
