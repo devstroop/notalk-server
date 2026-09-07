@@ -105,6 +105,9 @@ func main() {
 	apiMux := http.NewServeMux()
 	api.RegisterRoutes(apiMux)
 	handler.RegisterRBACRoutes(apiMux, db)
+	// Cache (opt-in Redis) — overlay/backdrop loader, no board
+	cacheH := handler.NewCacheHandler(mgr.Cache())
+	handler.RegisterCacheRoutes(apiMux, cacheH)
 
 	// Wrap API routes with auth middleware, then rate limit
 	authed := middleware.Auth(cfg.Auth.SecretKey, db, apiMux)

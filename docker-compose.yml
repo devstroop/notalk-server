@@ -1,4 +1,19 @@
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: notalk-redis
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
+    ports:
+      - "${NOTALK_REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+      start_period: 5s
+    # Opt-in: enabled via NOTALK_REDIS_ENABLED=true, but container can stay idle when disabled.
+
   postgres:
     image: postgres:18-alpine
     container_name: notalk-postgres
@@ -23,6 +38,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     ports:
       - "${NOTALK_SERVER_PORT:-5000}:${NOTALK_SERVER_PORT:-5000}"
     volumes:
@@ -38,6 +55,10 @@ services:
       NOTALK_CORS_ORIGINS: "${NOTALK_CORS_ORIGINS:-*}"
       NOTALK_AUTH_REGISTRATION_ENABLED: "${NOTALK_AUTH_REGISTRATION_ENABLED:-true}"
       NOTALK_SWAGGER_ENABLED: "${NOTALK_SWAGGER_ENABLED:-true}"
+      NOTALK_REDIS_ENABLED: "${NOTALK_REDIS_ENABLED:-false}"
+      NOTALK_REDIS_ADDR: "${NOTALK_REDIS_ADDR:-redis:6379}"
+      NOTALK_REDIS_PASSWORD: "${NOTALK_REDIS_PASSWORD:-}"
+      NOTALK_REDIS_DB: "${NOTALK_REDIS_DB:-0}"
 
 volumes:
   pg-data:

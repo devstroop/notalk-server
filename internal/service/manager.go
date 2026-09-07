@@ -10,6 +10,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 
+	"github.com/devstroop/notalk/internal/cache"
 	"github.com/devstroop/notalk/internal/config"
 	"github.com/devstroop/notalk/internal/database"
 	"github.com/devstroop/notalk/internal/model"
@@ -22,6 +23,7 @@ type AccountManager struct {
 
 	cfg     *config.Config
 	db      *database.DB
+	cache   *cache.Cache
 	baseDir string
 
 	// onMessage is invoked (in a goroutine) for every incoming message across all accounts.
@@ -39,9 +41,13 @@ func NewAccountManager(cfg *config.Config, db *database.DB) (*AccountManager, er
 		accounts: make(map[string]*Account),
 		cfg:      cfg,
 		db:       db,
+		cache:    cache.New(cfg.Redis),
 		baseDir:  baseDir,
 	}, nil
 }
+
+// Cache returns the Redis cache (opt-in, no-op when disabled).
+func (m *AccountManager) Cache() *cache.Cache { return m.cache }
 
 // Config returns the application configuration.
 func (m *AccountManager) Config() *config.Config { return m.cfg }
@@ -82,7 +88,7 @@ func (m *AccountManager) CreateAccount(req model.CreateAccountRequest) (*model.C
 		return nil, fmt.Errorf("db insert: %w", err)
 	}
 
-	acct := NewAccount(id, phone, name, dataDir, req.UserID, m.cfg.Database.DSN, now, m.db)
+	acct := NewAccountWithCache(id, phone, name, dataDir, req.UserID, m.cfg.Database.DSN, now, m.db, m.cache)
 	acct.WebhookCfg = m.cfg.Webhooks
 
 	m.mu.Lock()
@@ -291,7 +297,7 @@ func (m *AccountManager) DiscoverAccounts(ctx context.Context) error {
 		}
 
 		created, _ := time.Parse(time.RFC3339, rec.CreatedAt)
-		acct := NewAccount(rec.ID, rec.PhoneNumber, rec.AccountName, rec.DataDir, rec.UserID, m.cfg.Database.DSN, created, m.db)
+		acct := NewAccountWithCache(rec.ID, rec.PhoneNumber, rec.AccountName, rec.DataDir, rec.UserID, m.cfg.Database.DSN, created, m.db, m.cache)
 		acct.WebhookCfg = m.cfg.Webhooks
 
 		// Load proxy config if present

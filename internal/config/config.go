@@ -24,6 +24,7 @@ type Config struct {
 	Swagger  SwaggerConfig  `toml:"swagger"`
 	MCP      MCPConfig       `toml:"mcp"`
 	LLM      LLMConfig       `toml:"llm"`
+	Redis    RedisConfig     `toml:"redis"`
 }
 
 type ServerConfig struct {
@@ -118,6 +119,13 @@ type LLMConfig struct {
 	APIKey   string `toml:"api_key"`  // required for OpenAI; leave blank for Ollama
 	BaseURL  string `toml:"base_url"` // override API endpoint; blank = provider default
 	Model    string `toml:"model"`    // e.g. "gpt-4o-mini", "llama3.2"
+}
+
+type RedisConfig struct {
+	Enabled  bool   `toml:"enabled"`  // opt-in, default false (no Redis required)
+	Addr     string `toml:"addr"`     // host:port, e.g. "localhost:6379" or "redis:6379"
+	Password string `toml:"password"` // optional
+	DB       int    `toml:"db"`       // 0-15
 }
 
 // Load reads config from config/app.toml (next to binary or working dir),
@@ -277,6 +285,20 @@ func applyEnvOverrides(cfg *Config) {
 	if v := os.Getenv("NOTALK_LLM_MODEL"); v != "" {
 		cfg.LLM.Model = v
 	}
+	if v := os.Getenv("NOTALK_REDIS_ENABLED"); v != "" {
+		cfg.Redis.Enabled = v == "true" || v == "1"
+	}
+	if v := os.Getenv("NOTALK_REDIS_ADDR"); v != "" {
+		cfg.Redis.Addr = v
+	}
+	if v := os.Getenv("NOTALK_REDIS_PASSWORD"); v != "" {
+		cfg.Redis.Password = v
+	}
+	if v := os.Getenv("NOTALK_REDIS_DB"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			cfg.Redis.DB = n
+		}
+	}
 
 	// Auto-enable LLM if credentials are configured but enabled wasn't explicitly set.
 	if !cfg.LLM.Enabled && (cfg.LLM.APIKey != "" || cfg.LLM.Provider == "ollama") {
@@ -308,6 +330,7 @@ func defaults() *Config {
 		},
 		Swagger: SwaggerConfig{Enabled: true, Path: "/api-docs"},
 		MCP:     MCPConfig{Enabled: true},
+		Redis:   RedisConfig{Enabled: false, Addr: "redis:6379", DB: 0},
 	}
 }
 
