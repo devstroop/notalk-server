@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -18,7 +19,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 
-	"github.com/devstroop/notalk/internal/cache"
 	"github.com/devstroop/notalk/internal/config"
 	"github.com/devstroop/notalk/internal/database"
 	"github.com/devstroop/notalk/internal/model"
@@ -32,6 +32,43 @@ import (
 
 	"google.golang.org/protobuf/proto"
 )
+
+// sharedContainers reuses *sql.DB per DSN to avoid "too many clients"
+// Each sqlstore.New opens a new *sql.DB pool -> 1 DB per account * many accounts = 53300.
+// Reusing one DB per DSN caps total clients to postgres max_connections.
+var (
+	sharedContainersMu sync.Mutex
+	sharedContainers   = make(map[string]*sqlstore.Container)
+	sharedDBs          = make(map[string]*sql.DB)
+)
+
+func getSharedContainer(ctx context.Context, dsn string, logger waLog.Logger) (*sqlstore.Container, error) {
+	sharedContainersMu.Lock()
+	defer sharedContainersMu.Unlock()
+	if c, ok := sharedContainers[dsn]; ok {
+		return c, nil
+	}
+	db, ok := sharedDBs[dsn]
+	if !ok {
+		var err error
+		db, err = sql.Open("postgres", dsn)
+		if err != nil {
+			return nil, fmt.Errorf("open shared db: %w", err)
+		}
+		// Cap per-process so sum across accounts stays << postgres max_connections (100).
+		// 5 open / 2 idle is plenty for whatsmeow (mostly idle, short queries + Upgrade).
+		db.SetMaxOpenConns(5)
+		db.SetMaxIdleConns(2)
+		db.SetConnMaxLifetime(30 * time.Minute)
+		sharedDBs[dsn] = db
+	}
+	c := sqlstore.NewWithDB(db, "postgres", logger)
+	if err := c.Upgrade(ctx); err != nil {
+		return nil, fmt.Errorf("upgrade shared db: %w", err)
+	}
+	sharedContainers[dsn] = c
+	return c, nil
+}
 
 // Account wraps a single WhatsApp client with lifecycle management.
 type Account struct {
@@ -54,7 +91,6 @@ type Account struct {
 
 	rejected     bool // true after phone-number mismatch; blocks autoReconnect
 	db           *database.DB
-	cache        *cache.Cache
 	client       *whatsmeow.Client
 	container    *sqlstore.Container
 
@@ -116,13 +152,6 @@ func NewAccount(id, phone, name, dataDir, userID, sessionDSN string, createdAt t
 	}
 }
 
-// NewAccountWithCache constructs an Account with optional Redis cache (opt-in).
-func NewAccountWithCache(id, phone, name, dataDir, userID, sessionDSN string, createdAt time.Time, db *database.DB, c *cache.Cache) *Account {
-	a := NewAccount(id, phone, name, dataDir, userID, sessionDSN, createdAt, db)
-	a.cache = c
-	return a
-}
-
 // Connect initialises the WhatsApp client and connects to WhatsApp servers.
 func (a *Account) Connect(ctx context.Context) error {
 	a.mu.Lock()
@@ -151,7 +180,7 @@ func (a *Account) Connect(ctx context.Context) error {
 // Must be called with a.mu held.
 func (a *Account) prepareClient(ctx context.Context) error {
 	logger := waLog.Noop
-	container, err := sqlstore.New(ctx, "postgres", a.SessionDSN, logger)
+	container, err := getSharedContainer(ctx, a.SessionDSN, logger)
 	if err != nil {
 		return fmt.Errorf("open session store: %w", err)
 	}
@@ -345,7 +374,7 @@ func (a *Account) Logout() error {
 	// Not connected: just wipe local session data so
 	// hasStoredSession() stops returning true.
 	logger := waLog.Noop
-	container, err := sqlstore.New(context.Background(), "postgres", a.SessionDSN, logger)
+	container, err := getSharedContainer(context.Background(), a.SessionDSN, logger)
 	if err != nil {
 		return fmt.Errorf("open store for cleanup: %w", err)
 	}
@@ -575,9 +604,9 @@ func (a *Account) HasStoredCredentials() bool {
 	if a.client != nil {
 		return a.client.Store.ID != nil
 	}
-	// Probe the shared PostgreSQL session store
+	// Probe the shared PostgreSQL session store (shared DB, capped conns)
 	logger := waLog.Noop
-	container, err := sqlstore.New(context.Background(), "postgres", a.SessionDSN, logger)
+	container, err := getSharedContainer(context.Background(), a.SessionDSN, logger)
 	if err != nil {
 		return false
 	}
@@ -619,9 +648,9 @@ func (a *Account) Reset() error {
 		return nil
 	}
 
-	// If no container cached, open a temporary one to clean up
+	// If no container cached, open a temporary one to clean up (shared, capped)
 	logger := waLog.Noop
-	container, err := sqlstore.New(context.Background(), "postgres", a.SessionDSN, logger)
+	container, err := getSharedContainer(context.Background(), a.SessionDSN, logger)
 	if err != nil {
 		return fmt.Errorf("open store for reset: %w", err)
 	}
@@ -1373,17 +1402,9 @@ func (a *Account) RevokeMessage(ctx context.Context, chatJID, messageID string) 
 }
 
 // ListMessages returns stored messages for a chat with cursor pagination.
-// When Redis is enabled (opt-in), results are cached for 5s per chat.
 func (a *Account) ListMessages(chatJID string, limit int, before string) (model.MessageListResponse, error) {
 	if a.db == nil {
 		return model.MessageListResponse{}, fmt.Errorf("no database")
-	}
-	cacheKey := fmt.Sprintf("msgs:%s:%s:%d:%s", a.ID, chatJID, limit, before)
-	if a.cache != nil && a.cache.Enabled() {
-		var cached model.MessageListResponse
-		if err := a.cache.GetJSON(context.Background(), cacheKey, &cached); err == nil {
-			return cached, nil
-		}
 	}
 
 	// Query both PN and LID variants since history may be stored under either
@@ -1432,7 +1453,7 @@ func (a *Account) ListMessages(chatJID string, limit int, before string) (model.
 		if r.Type == "protocol" {
 			continue
 		}
-			msgs = append(msgs, model.MessageInfo{
+		msgs = append(msgs, model.MessageInfo{
 			ID:        r.ID,
 			ChatJID:   r.ChatJID,
 			SenderJID: r.SenderJID,
@@ -1443,11 +1464,10 @@ func (a *Account) ListMessages(chatJID string, limit int, before string) (model.
 			Timestamp: r.Timestamp,
 		})
 	}
-	resp := model.MessageListResponse{Messages: msgs, Count: len(msgs)}
-	if a.cache != nil && a.cache.Enabled() {
-		_ = a.cache.SetJSON(context.Background(), cacheKey, resp, 5*time.Second)
-	}
-	return resp, nil
+	return model.MessageListResponse{
+		Messages: msgs,
+		Count:    len(msgs),
+	}, nil
 }
 
 // DownloadMedia downloads media from a received message.
@@ -1467,15 +1487,7 @@ func (a *Account) DownloadMedia(ctx context.Context, msg *waE2E.Message) ([]byte
 
 // ListChats returns known contacts and groups from the local store,
 // enriched with last message, unread count, and sorted by most recent activity.
-// When Redis is enabled (opt-in via NOTALK_REDIS_ENABLED), results are cached for 8s.
 func (a *Account) ListChats(ctx context.Context) ([]model.ChatInfo, error) {
-	cacheKey := "chats:" + a.ID
-	if a.cache != nil && a.cache.Enabled() {
-		var cached []model.ChatInfo
-		if err := a.cache.GetJSON(ctx, cacheKey, &cached); err == nil {
-			return cached, nil
-		}
-	}
 	client, err := a.requireConnectedClient()
 	if err != nil {
 		return nil, err
@@ -1650,9 +1662,6 @@ func (a *Account) ListChats(ctx context.Context) ([]model.ChatInfo, error) {
 		return ti > tj
 	})
 
-	if a.cache != nil && a.cache.Enabled() {
-		_ = a.cache.SetJSON(context.Background(), cacheKey, chats, 8*time.Second)
-	}
 	return chats, nil
 }
 
@@ -1694,9 +1703,6 @@ func (a *Account) handleEvent(evt interface{}) {
 	case *events.Message:
 		log.Debug().Str("account", a.ID).Str("from", v.Info.Sender.String()).Str("chat", v.Info.Chat.String()).Bool("from_me", v.Info.IsFromMe).Str("type", classifyMessage(v.Message)).Msg("message event received")
 		a.storeMessage(v)
-		if a.cache != nil && a.cache.Enabled() {
-			_ = a.cache.Del(context.Background(), "chats:"+a.ID, "msgs:"+a.ID+":"+v.Info.Chat.String(), "msgs:"+a.ID+":*")
-		}
 		a.dispatchWebhook("message", map[string]any{
 			"id":         v.Info.ID,
 			"chat":       v.Info.Chat.String(),
@@ -1837,9 +1843,6 @@ func (a *Account) storeOutgoing(msgID, chatJID, msgType, body, mediaType string)
 	}
 	if err := a.db.InsertMessage(rec); err != nil {
 		log.Warn().Str("account", a.ID).Err(err).Msg("failed to store outgoing message")
-	}
-	if a.cache != nil && a.cache.Enabled() {
-		_ = a.cache.Del(context.Background(), "chats:"+a.ID)
 	}
 }
 
