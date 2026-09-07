@@ -56,3 +56,9 @@ path = "/api-docs"
 
 [mcp]
 enabled = true       # Enable/disable MCP server (can also toggle at runtime via admin UI)
+
+[redis]
+enabled = false      # opt-in — set true to cache heavy whatsapp chats (8s) and messages (5s)
+addr = "redis:6379"  # or "localhost:6379" for local dev
+# password = ""
+# db = 0

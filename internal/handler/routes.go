@@ -134,3 +134,11 @@ func RegisterRBACRoutes(mux *http.ServeMux, db *database.DB) {
 	mux.HandleFunc("GET /api/v1/billing/usage", perm("*", billing.GetUsage))
 	mux.HandleFunc("GET /api/v1/billing/config", perm("*", billing.GetBillingConfig))
 }
+
+// RegisterCacheRoutes wires opt-in cache endpoints (overlay loader).
+// No special board — just status + flush with backdrop feedback.
+func RegisterCacheRoutes(mux *http.ServeMux, h *CacheHandler) {
+	perm := middleware.RequirePermission
+	mux.HandleFunc("GET /api/v1/cache/status", perm("*", h.Status))
+	mux.HandleFunc("POST /api/v1/cache/flush", perm("*", h.Flush))
+}
