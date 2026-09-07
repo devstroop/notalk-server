@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -31,6 +32,43 @@ import (
 
 	"google.golang.org/protobuf/proto"
 )
+
+// sharedContainers reuses *sql.DB per DSN to avoid "too many clients"
+// Each sqlstore.New opens a new *sql.DB pool -> 1 DB per account * many accounts = 53300.
+// Reusing one DB per DSN caps total clients to postgres max_connections.
+var (
+	sharedContainersMu sync.Mutex
+	sharedContainers   = make(map[string]*sqlstore.Container)
+	sharedDBs          = make(map[string]*sql.DB)
+)
+
+func getSharedContainer(ctx context.Context, dsn string, logger waLog.Logger) (*sqlstore.Container, error) {
+	sharedContainersMu.Lock()
+	defer sharedContainersMu.Unlock()
+	if c, ok := sharedContainers[dsn]; ok {
+		return c, nil
+	}
+	db, ok := sharedDBs[dsn]
+	if !ok {
+		var err error
+		db, err = sql.Open("postgres", dsn)
+		if err != nil {
+			return nil, fmt.Errorf("open shared db: %w", err)
+		}
+		// Cap per-process so sum across accounts stays << postgres max_connections (100).
+		// 5 open / 2 idle is plenty for whatsmeow (mostly idle, short queries + Upgrade).
+		db.SetMaxOpenConns(5)
+		db.SetMaxIdleConns(2)
+		db.SetConnMaxLifetime(30 * time.Minute)
+		sharedDBs[dsn] = db
+	}
+	c := sqlstore.NewWithDB(db, "postgres", logger)
+	if err := c.Upgrade(ctx); err != nil {
+		return nil, fmt.Errorf("upgrade shared db: %w", err)
+	}
+	sharedContainers[dsn] = c
+	return c, nil
+}
 
 // Account wraps a single WhatsApp client with lifecycle management.
 type Account struct {
@@ -142,7 +180,7 @@ func (a *Account) Connect(ctx context.Context) error {
 // Must be called with a.mu held.
 func (a *Account) prepareClient(ctx context.Context) error {
 	logger := waLog.Noop
-	container, err := sqlstore.New(ctx, "postgres", a.SessionDSN, logger)
+	container, err := getSharedContainer(ctx, a.SessionDSN, logger)
 	if err != nil {
 		return fmt.Errorf("open session store: %w", err)
 	}
@@ -336,7 +374,7 @@ func (a *Account) Logout() error {
 	// Not connected: just wipe local session data so
 	// hasStoredSession() stops returning true.
 	logger := waLog.Noop
-	container, err := sqlstore.New(context.Background(), "postgres", a.SessionDSN, logger)
+	container, err := getSharedContainer(context.Background(), a.SessionDSN, logger)
 	if err != nil {
 		return fmt.Errorf("open store for cleanup: %w", err)
 	}
@@ -566,9 +604,9 @@ func (a *Account) HasStoredCredentials() bool {
 	if a.client != nil {
 		return a.client.Store.ID != nil
 	}
-	// Probe the shared PostgreSQL session store
+	// Probe the shared PostgreSQL session store (shared DB, capped conns)
 	logger := waLog.Noop
-	container, err := sqlstore.New(context.Background(), "postgres", a.SessionDSN, logger)
+	container, err := getSharedContainer(context.Background(), a.SessionDSN, logger)
 	if err != nil {
 		return false
 	}
@@ -610,9 +648,9 @@ func (a *Account) Reset() error {
 		return nil
 	}
 
-	// If no container cached, open a temporary one to clean up
+	// If no container cached, open a temporary one to clean up (shared, capped)
 	logger := waLog.Noop
-	container, err := sqlstore.New(context.Background(), "postgres", a.SessionDSN, logger)
+	container, err := getSharedContainer(context.Background(), a.SessionDSN, logger)
 	if err != nil {
 		return fmt.Errorf("open store for reset: %w", err)
 	}
